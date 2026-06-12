@@ -1,0 +1,13 @@
+node_modules/
+.env
+.env.local
+*.log
+.DS_Store
+dist/
+.cache/
+fetch_every.js
+retry_429.js
+serve.js
+test_shell_write.txt
+test_write_check.txt
+print.html
