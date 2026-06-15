@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>ScanUp — Facility Inventory Prototype</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #fff;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #1f6feb;
+    --green: #1a7f37;
+    --amber: #b45309;
+    --red: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { background: #fff; border-bottom: 1px solid var(--line); padding: 14px 20px; display:flex; align-items:center; gap:12px; }
+  header h1 { font-size: 16px; margin: 0; }
+  header .tag { font-size: 11px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; }
+  main { display: grid; grid-template-columns: 320px 1fr 360px; gap: 0; height: calc(100vh - 50px); }
+  .pane { overflow: auto; padding: 14px; }
+  .pane + .pane { border-left: 1px solid var(--line); }
+  .pane.left { background: #fff; }
+  .pane.right { background: #fff; }
+
+  .thumb { display:flex; gap:10px; padding:8px; border-radius:8px; cursor:pointer; border: 1px solid transparent; margin-bottom: 6px; }
+  .thumb:hover { background: #f0f3f7; }
+  .thumb.active { background: #eaf2ff; border-color: #cfe0ff; }
+  .thumb img { width: 72px; height: 54px; object-fit: cover; border-radius: 4px; background:#eee; flex-shrink:0; }
+  .thumb .t-label { font-weight: 500; font-size: 13px; line-height: 1.3; }
+  .thumb .t-type { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-top: 2px; }
+
+  .stage { background: #111; display:flex; align-items:center; justify-content:center; position:relative; }
+  .stage img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .stage .empty { color: #888; }
+
+  .panel-title { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 8px; }
+  h2 { font-size: 16px; margin: 0 0 6px; }
+  .type-pill { display:inline-block; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color:#fff; padding:2px 8px; border-radius: 999px; }
+  .type-pill.gymnasium { background: var(--accent); }
+  .type-pill.auditorium { background: #8957e5; }
+  .type-pill.classroom { background: var(--green); }
+  .type-pill.outdoor_field { background: var(--amber); }
+
+  .scan-btn { background: var(--accent); color: #fff; border: 0; padding: 8px 14px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 13px; }
+  .scan-btn:hover { filter: brightness(1.05); }
+  .scan-btn:disabled { background: #aab; cursor: default; }
+
+  .components { margin-top: 10px; }
+  .comp { display:flex; align-items:flex-start; gap:8px; padding: 8px; border:1px solid var(--line); border-radius: 6px; margin-bottom: 6px; background:#fcfcfd; }
+  .comp input[type=checkbox] { margin-top: 2px; }
+  .comp .c-name { font-weight: 500; }
+  .comp .c-conf { font-size: 11px; color: var(--muted); margin-left: 6px; }
+  .comp.conf-high .c-conf { color: var(--green); }
+  .comp.conf-med .c-conf { color: var(--amber); }
+  .comp.conf-low .c-conf { color: var(--red); }
+  .comp .c-actions { margin-left: auto; display:flex; gap:4px; }
+  .icon-btn { background: transparent; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; font-size: 11px; padding: 2px 6px; color: var(--muted); }
+  .icon-btn:hover { background: #f3f4f6; color: var(--ink); }
+  .icon-btn.danger:hover { color: var(--red); border-color: #fecaca; }
+
+  .add-row { display:flex; gap:6px; margin-top: 6px; }
+  .add-row input { flex:1; padding: 6px 8px; border: 1px solid var(--line); border-radius: 4px; font: inherit; }
+  .add-row button { padding: 6px 10px; border:1px solid var(--line); background:#fff; border-radius: 4px; cursor:pointer; }
+
+  .summary { white-space: pre-wrap; background: #fafafa; border: 1px solid var(--line); border-radius: 6px; padding: 10px; font-size: 13px; min-height: 80px; }
+
+  .stats { display:flex; gap:8px; font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .stats b { color: var(--ink); }
+
+  .legend { font-size: 11px; color: var(--muted); margin-top: 14px; line-height: 1.5; }
+  .legend .dot { display:inline-block; width:8px; height:8px; border-radius: 50%; vertical-align: middle; margin-right: 4px; }
+
+  details { margin-top: 12px; }
+  summary { cursor: pointer; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>ScanUp</h1>
+  <span class="tag">Facility Inventory Prototype</span>
+  <span class="tag" id="img-count">0 images</span>
+</header>
+
+<main>
+  <!-- LEFT: image list -->
+  <aside class="pane left">
+    <div class="panel-title">Sample images</div>
+    <div id="thumbs"></div>
+  </aside>
+
+  <!-- CENTER: viewer + components -->
+  <section class="pane" style="display:flex; flex-direction:column; padding:0;">
+    <div class="stage" id="stage" style="flex:1; min-height: 280px;">
+      <span class="empty">Select an image on the left</span>
+    </div>
+    <div style="padding: 14px; border-top: 1px solid var(--line); background: #fff;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <h2 id="img-label">—</h2>
+        <span class="type-pill" id="img-type"></span>
+        <span style="flex:1"></span>
+        <button class="scan-btn" id="scan-btn">Scan for components</button>
+      </div>
+      <div class="stats" id="stats"></div>
+      <div class="components" id="components"></div>
+      <div class="add-row">
+        <input id="add-input" placeholder="Add a component the scan missed…" />
+        <button id="add-btn">Add</button>
+      </div>
+      <div class="legend">
+        <span class="dot" style="background: var(--green)"></span>high confidence
+        &nbsp;<span class="dot" style="background: var(--amber)"></span>medium — review
+        &nbsp;<span class="dot" style="background: var(--red)"></span>low — likely false positive
+      </div>
+    </div>
+  </section>
+
+  <!-- RIGHT: rental description -->
+  <aside class="pane right">
+    <div class="panel-title">Rental description</div>
+    <p style="color: var(--muted); font-size: 12px; margin: 0 0 8px;">Auto-generated from confirmed components. Edit freely.</p>
+    <textarea class="summary" id="summary" rows="14"></textarea>
+    <details>
+      <summary>How detection works (prototype)</summary>
+      <p style="font-size:12px; color:var(--muted);">
+        This prototype simulates a 2-stage detector: a proposer lists candidate components with confidence scores, and you confirm or reject each one. Low-confidence proposals are surfaced for review — that's the lever that drives both false positives and false negatives toward zero. In production, the proposer would be a vision-language model and the verifier would re-check each candidate against the cropped region.
+      </p>
+    </details>
+  </aside>
+</main>
+
+<script>
+// ---------- Sample data ----------
+// 10 sample images. Each has authored "ground truth" components.
+// The "scan" simulates a detector by surfacing these with plausible confidence scores
+// plus an occasional low-confidence noisy proposal for the user to reject.
+// Unsplash CDN — hotlinks reliably from file:// origins
+const U = (id, q="?w=1280&q=70&auto=format&fit=crop") => `https://images.unsplash.com/${id}${q}`;
+const UP = (id, q="?w=1280&q=70&auto=format&fit=crop") => `https://plus.unsplash.com/${id}${q}`;
+
+const IMAGES = [
+  {
+    id: 1, facility_type: "gymnasium", label: "Basketball gym — game in progress",
+    credit: "Markus Spiske / Unsplash",
+    url: U("photo-1572454181157-0b40dd7667fe"),
+    truth: ["basketball hoop", "backboard", "court markings", "wood floor", "spectator seats", "ceiling lights"],
+    noise: ["soccer goal"]
+  },
+  {
+    id: 2, facility_type: "gymnasium", label: "Indoor court — basketball hoop closeup",
+    credit: "LOGAN WEAVER / Unsplash",
+    url: U("photo-1577416412292-747c6607f055"),
+    truth: ["basketball hoop", "backboard", "wall padding", "court markings", "wood floor"],
+    noise: ["stage curtain"]
+  },
+  {
+    id: 3, facility_type: "gymnasium", label: "Empty gymnasium — wide view",
+    credit: "Patrick Schöpflin / Unsplash",
+    url: U("photo-1559369064-c4d65141e408"),
+    truth: ["basketball hoop", "court floor", "windows", "overhead lighting"],
+    noise: ["projector screen"]
+  },
+  {
+    id: 4, facility_type: "auditorium", label: "Auditorium with red seats and stage",
+    credit: "Evan Jeung / Unsplash",
+    url: U("photo-1722321974501-059dff03e970"),
+    truth: ["stage", "fixed seating", "stage lighting", "balcony", "acoustic ceiling"],
+    noise: ["bleachers"]
+  },
+  {
+    id: 5, facility_type: "auditorium", label: "Theater — empty red seat rows",
+    credit: "Andrej Lišakov / Unsplash+",
+    url: UP("premium_photo-1684923604860-64e661f2ff72"),
+    truth: ["theater seats", "aisle", "seat rows", "house lights"],
+    noise: ["whiteboard"]
+  },
+  {
+    id: 6, facility_type: "auditorium", label: "Theater — stage with curtain",
+    credit: "Sonder Quest / Unsplash",
+    url: U("photo-1545129139-1beb780cf337"),
+    truth: ["stage", "curtain", "audience seating", "stage lighting"],
+    noise: ["basketball hoop"]
+  },
+  {
+    id: 7, facility_type: "classroom", label: "Classroom — desks and chairs",
+    credit: "Giulia Squillace / Unsplash+",
+    url: UP("premium_photo-1671070687963-2a68805cb9cf"),
+    truth: ["student desks", "chairs", "windows", "overhead lighting"],
+    noise: ["bleachers"]
+  },
+  {
+    id: 8, facility_type: "classroom", label: "Classroom — desks and chalkboard",
+    credit: "Nguyen Phan Nam Anh / Unsplash",
+    url: U("photo-1644997933069-f5ede7b207ac"),
+    truth: ["student desks", "chairs", "chalkboard", "windows"],
+    noise: ["stage curtain"]
+  },
+  {
+    id: 9, facility_type: "classroom", label: "Classroom — wooden desks, windows",
+    credit: "2y.kang / Unsplash",
+    url: U("photo-1635424239131-32dc44986b56"),
+    truth: ["wooden desks", "chairs", "windows", "overhead lighting", "floor"],
+    noise: ["projector screen"]
+  },
+  {
+    id: 10, facility_type: "outdoor_field", label: "Football field — empty bleachers",
+    credit: "Patrick Konior / Unsplash",
+    url: U("photo-1709431511156-6998b1b1e459"),
+    truth: ["football field", "yard lines", "bleachers", "goalposts", "field lighting", "sky"],
+    noise: ["basketball hoop"]
+  }
+];
+
+// Working state: per-image array of {name, confidence, confirmed}
+const state = {};
+IMAGES.forEach(im => { state[im.id] = { scanned: false, components: [] }; });
+
+let currentId = null;
+
+// ---------- Rendering ----------
+const thumbs = document.getElementById('thumbs');
+document.getElementById('img-count').textContent = `${IMAGES.length} images`;
+
+IMAGES.forEach(im => {
+  const div = document.createElement('div');
+  div.className = 'thumb';
+  div.dataset.id = im.id;
+  div.innerHTML = `
+    <img referrerpolicy="no-referrer" src="${im.url}" alt="">
+    <div>
+      <div class="t-label">#${im.id}. ${im.label}</div>
+      <div class="t-type">${im.facility_type.replace('_',' ')}</div>
+    </div>`;
+  div.addEventListener('click', () => selectImage(im.id));
+  thumbs.appendChild(div);
+});
+
+function selectImage(id) {
+  currentId = id;
+  const im = IMAGES.find(x => x.id === id);
+  document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('active', +t.dataset.id === id));
+  document.getElementById('stage').innerHTML = `<img referrerpolicy="no-referrer" src="${im.url}" alt="${im.label}">`;
+  document.getElementById('img-label').textContent = im.label;
+  const pill = document.getElementById('img-type');
+  pill.textContent = im.facility_type.replace('_',' ');
+  pill.className = 'type-pill ' + im.facility_type;
+  document.getElementById('scan-btn').disabled = state[id].scanned;
+  document.getElementById('scan-btn').textContent = state[id].scanned ? 'Rescan' : 'Scan for components';
+  document.getElementById('scan-btn').disabled = false;
+  renderComponents();
+  renderSummary();
+}
+
+function scan() {
+  if (!currentId) return;
+  const im = IMAGES.find(x => x.id === currentId);
+  // Simulate: each truth item gets a high/medium confidence; one noise item gets low.
+  const proposals = [];
+  im.truth.forEach((name, i) => {
+    // first half high, rest medium for visual variety
+    const conf = i < Math.ceil(im.truth.length * 0.7) ? 0.92 - i*0.01 : 0.74 - (i-3)*0.02;
+    proposals.push({ name, confidence: +conf.toFixed(2), confirmed: true });
+  });
+  // add a low-confidence noisy proposal that the user should reject
+  if (im.noise && im.noise[0]) {
+    proposals.push({ name: im.noise[0], confidence: 0.34, confirmed: false, suspect: true });
+  }
+  state[currentId] = { scanned: true, components: proposals };
+  renderComponents();
+  renderSummary();
+}
+
+function renderComponents() {
+  const wrap = document.getElementById('components');
+  wrap.innerHTML = '';
+  if (!currentId) return;
+  const s = state[currentId];
+  if (!s.scanned) {
+    wrap.innerHTML = '<p style="color:var(--muted); font-size:13px;">No scan yet. Click <b>Scan for components</b> to propose detections.</p>';
+    document.getElementById('stats').textContent = '';
+    return;
+  }
+  s.components.forEach((c, idx) => {
+    const confClass = c.confidence >= 0.85 ? 'conf-high' : c.confidence >= 0.6 ? 'conf-med' : 'conf-low';
+    const row = document.createElement('div');
+    row.className = 'comp ' + confClass;
+    row.innerHTML = `
+      <input type="checkbox" ${c.confirmed ? 'checked' : ''} data-i="${idx}">
+      <span class="c-name">${c.name}</span>
+      <span class="c-conf">${Math.round(c.confidence*100)}%${c.suspect ? ' · review' : ''}</span>
+      <span class="c-actions">
+        <button class="icon-btn danger" data-rm="${idx}" title="Remove (false positive)">remove</button>
+      </span>`;
+    wrap.appendChild(row);
+  });
+  wrap.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const i = +e.target.dataset.i;
+      state[currentId].components[i].confirmed = e.target.checked;
+      renderSummary();
+      updateStats();
+    });
+  });
+  wrap.querySelectorAll('button[data-rm]').forEach(b => {
+    b.addEventListener('click', e => {
+      const i = +e.target.dataset.rm;
+      state[currentId].components.splice(i, 1);
+      renderComponents();
+      renderSummary();
+    });
+  });
+  updateStats();
+}
+
+function updateStats() {
+  if (!currentId) return;
+  const s = state[currentId];
+  const total = s.components.length;
+  const confirmed = s.components.filter(c => c.confirmed).length;
+  const low = s.components.filter(c => c.confidence < 0.6).length;
+  document.getElementById('stats').innerHTML =
+    `<span><b>${confirmed}</b>/${total} confirmed</span>` +
+    (low ? `<span>· <b>${low}</b> low-confidence to review</span>` : '');
+}
+
+function renderSummary() {
+  if (!currentId) { document.getElementById('summary').value = ''; return; }
+  const im = IMAGES.find(x => x.id === currentId);
+  const s = state[currentId];
+  const list = (s.components || []).filter(c => c.confirmed).map(c => c.name);
+  const typeName = im.facility_type.replace('_',' ');
+  const intro = `Available for rental: ${im.label} (${typeName}).`;
+  const body = list.length
+    ? `Features include ${list.join(', ')}.`
+    : 'Run a scan and confirm components to populate this description.';
+  document.getElementById('summary').value = `${intro}\n\n${body}`;
+}
+
+document.getElementById('scan-btn').addEventListener('click', scan);
+document.getElementById('add-btn').addEventListener('click', () => {
+  if (!currentId) return;
+  const inp = document.getElementById('add-input');
+  const name = inp.value.trim();
+  if (!name) return;
+  if (!state[currentId].scanned) state[currentId].scanned = true;
+  state[currentId].components.push({ name, confidence: 1.0, confirmed: true, userAdded: true });
+  inp.value = '';
+  renderComponents();
+  renderSummary();
+});
+document.getElementById('add-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('add-btn').click();
+});
+
+// auto-select first
+selectImage(1);
+</script>
+</body>
+</html>

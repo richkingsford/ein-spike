@@ -1,628 +1,232 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EIN Spike — Nonprofit Lookup Research</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; color: #1a1a2e; line-height: 1.6; font-size: 14px; }
-    header { background: #1a1a2e; color: #fff; padding: 20px 28px; }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
-    header p { font-size: 0.8rem; color: #aab; margin-top: 4px; }
-    .container { max-width: 1100px; margin: 0 auto; padding: 28px 20px; }
-    .section-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: #888; margin-top: 20px; margin-bottom: 6px; }
-    .tab-group { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 0; }
-    .tab-btn { padding: 7px 14px; border: none; border-radius: 7px 7px 0 0; cursor: pointer; font-size: 0.78rem; font-weight: 600; background: #dde3f7; color: #4361ee; transition: background .15s; position: relative; }
-    .tab-btn.af { background: #4361ee; color: #fff; }
-    .tab-btn.ap { background: #7209b7; color: #fff; }
-    .tab-btn:hover:not(.af):not(.ap) { background: #c7d0f5; }
-    .badge-pill { position: absolute; top: -8px; font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 10px; white-space: nowrap; }
-    .pill-rec { right: -4px; background: #f59e0b; color: #fff; }
-    .pill-live { left: -4px; background: #166534; color: #fff; }
-    .pill-key { right: -4px; background: #e5e7eb; color: #6b7280; }
-    .pill-noapi { right: -4px; background: #fce7f3; color: #9d174d; }
-    .tab-panel { display: none; background: #fff; border-radius: 0 10px 10px 10px; border: 1px solid #e8eaf0; }
-    .tab-panel.active { display: block; }
-    .panel-meta { padding: 16px 20px; border-bottom: 1px solid #f0f0f5; }
-    .panel-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
-    .panel-title { font-size: 1rem; font-weight: 600; }
-    .panel-link a { color: #4361ee; text-decoration: none; font-size: 0.78rem; }
-    .panel-link a:hover { text-decoration: underline; }
-    .panel-tag { display: inline-block; font-size: 0.68rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-right: 4px; }
-    .tag-free { background: #dcfce7; color: #166534; }
-    .tag-paid { background: #f3e8ff; color: #7209b7; }
-    .tag-live { background: #dcfce7; color: #166534; }
-    .tag-rec { background: #fef3c7; color: #92400e; }
-    .tag-needskey { background: #f3f4f6; color: #6b7280; }
-    .panel-desc { font-size: 0.82rem; color: #555; line-height: 1.65; margin-top: 6px; }
-    .free-note { margin-top: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #166534; }
-    .key-note { margin-top: 8px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; color: #6b7280; }
-    .limits-box { margin-top: 10px; background: #fffbf5; border: 1px solid #fde7c7; border-radius: 6px; padding: 10px 14px; font-size: 0.78rem; }
-    .limits-box .lh { font-size: 0.68rem; font-weight: 700; color: #92400e; letter-spacing: .07em; text-transform: uppercase; margin-bottom: 6px; }
-    .limits-box ul { padding-left: 18px; margin: 0; }
-    .limits-box li { color: #555; line-height: 1.55; margin-bottom: 2px; }
-    .limits-box li strong { color: #1a1a2e; }
-    .bulk-box { margin: 12px 20px; border: 1px solid #c7d0f5; border-radius: 8px; padding: 14px; background: linear-gradient(180deg, #f6f8ff 0%, #ffffff 100%); }
-    .bulk-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .bulk-title { font-size: 0.92rem; font-weight: 600; }
-    .bulk-sub { font-size: 0.74rem; color: #888; margin-top: 2px; }
-    .bulk-btn { background: #4361ee; color: #fff; border: none; border-radius: 6px; padding: 8px 14px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
-    .bulk-btn:hover { background: #3651d4; }
-    .bulk-btn:disabled { background: #aab; cursor: not-allowed; }
-    .progress-wrap { margin-top: 10px; background: #eef0f7; border-radius: 4px; height: 8px; overflow: hidden; }
-    .progress-bar { background: #4361ee; height: 100%; width: 0; transition: width .2s; }
-    .bulk-stats { display: flex; gap: 14px; margin-top: 10px; flex-wrap: wrap; font-size: 0.8rem; }
-    .bulk-stat { background: #fff; border: 1px solid #e8eaf0; border-radius: 6px; padding: 6px 10px; flex: 1; min-width: 110px; }
-    .bulk-stat .bn { font-size: 0.65rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-    .bulk-stat .bv { font-size: 0.95rem; font-weight: 600; color: #1a1a2e; margin-top: 1px; }
-    .bulk-stat.ok .bv { color: #166534; }
-    .bulk-stat.warn .bv { color: #92400e; }
-    .bulk-stat.fail .bv { color: #991b1b; }
-    .bulk-log { margin-top: 10px; max-height: 200px; overflow-y: auto; background: #1a1a2e; color: #c7d0f5; font-family: monospace; font-size: 0.7rem; padding: 8px 12px; border-radius: 6px; line-height: 1.5; }
-    .bulk-log .ok { color: #6ee7b7; } .bulk-log .err { color: #fca5a5; } .bulk-log .info { color: #93c5fd; }
-    .bulk-table-wrap { margin-top: 12px; max-height: 460px; overflow-y: auto; border: 1px solid #e8eaf0; border-radius: 6px; background: #fff; }
-    .bulk-table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
-    .bulk-table th { position: sticky; top: 0; background: #f9fafb; color: #888; font-weight: 600; padding: 6px 8px; text-align: left; font-size: 0.62rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #e8eaf0; z-index: 1; }
-    .bulk-table td { padding: 4px 8px; border-bottom: 1px solid #f5f5f8; vertical-align: top; }
-    .bulk-table .e { font-family: monospace; color: #666; }
-    .bulk-table .n { color: #1a1a2e; }
-    .bulk-table .v { font-weight: 600; }
-    .bulk-table .v.p { color: #aaa; font-weight: 400; font-style: italic; }
-    .bulk-table .v.k { color: #166534; }
-    .bulk-table .v.x { color: #92400e; }
-    .bulk-table .v.e { color: #991b1b; }
-    .bulk-table tr.row-ok td { background: #f0fdf4; }
-    .bulk-table tr.row-404 td { background: #fffbeb; }
-    .bulk-table tr.row-err td { background: #fff1f2; }
-    .price-box { margin-top: 8px; background: #faf8ff; border: 1px solid #ede9fe; border-radius: 6px; padding: 8px 12px; font-size: 0.8rem; }
-    .price-box strong { color: #7209b7; }
-    .ratings-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .rc { background: #faf8ff; border: 1px solid #ede9fe; border-radius: 6px; padding: 8px 10px; flex: 1; min-width: 120px; }
-    .rl { font-size: 0.68rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 2px; }
-    .stars { font-size: 0.9rem; letter-spacing: 1px; }
-    .sf { color: #f59e0b; } .se { color: #d1d5db; }
-    .conf-ok { background: #f0fdf4; }
-    .conf-flag { background: #fffbeb; }
-    .conf-fail { background: #fff1f2; }
-    .summary-bar { display: flex; gap: 20px; padding: 10px 20px; background: #f9fafb; border-bottom: 1px solid #f0f0f5; flex-wrap: wrap; }
-    .stat { font-size: 0.82rem; }
-    .stat strong { font-size: 1rem; font-weight: 600; }
-    .stat.ok strong { color: #166534; }
-    .stat.warn strong { color: #92400e; }
-    .stat.fail strong { color: #991b1b; }
-    .table-toolbar { padding: 10px 20px 6px; display: flex; justify-content: space-between; align-items: center; }
-    .table-label { font-size: 0.8rem; font-weight: 600; color: #888; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.81rem; }
-    th { background: #f9fafb; color: #888; text-align: left; padding: 7px 14px; font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #f0f0f5; }
-    td { padding: 9px 14px; border-bottom: 1px solid #f5f5f8; vertical-align: top; }
-    tr:last-child td { border-bottom: none; }
-    tr.r-ok td { background: #f0fdf4; }
-    tr.r-flag td { background: #fffbeb; }
-    tr.r-fail td { background: #fff1f2; }
-    tr.r-insight td { padding: 0 14px 10px; }
-    .b-well { background: #e0e7ff; color: #3730a3; display:inline-block; font-size:.65rem; padding:1px 6px; border-radius:20px; font-weight:600; }
-    .b-less { background: #dcfce7; color: #166534; display:inline-block; font-size:.65rem; padding:1px 6px; border-radius:20px; font-weight:600; }
-    .ein { font-family: monospace; font-size: 0.78rem; color: #666; }
-    .ret-ein { font-family: monospace; font-size: 0.82rem; font-weight: 600; }
-    .ret-name { font-size: 0.72rem; color: #888; margin-top: 2px; }
-    .verdict-ok { color: #166534; font-weight: 600; font-size: 0.78rem; }
-    .verdict-flag { color: #92400e; font-weight: 600; font-size: 0.78rem; }
-    .verdict-fail { color: #991b1b; font-weight: 600; font-size: 0.78rem; }
-    .verdict-pending { color: #aaa; font-style: italic; font-size: 0.75rem; }
-    .rank { font-size: 0.7rem; color: #888; margin-top: 2px; }
-    .insight-block { border-radius: 6px; padding: 8px 12px; font-size: 0.78rem; line-height: 1.6; }
-    .ib-warn { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
-    .ib-fail { background: #fff1f2; border: 1px solid #fecdd3; color: #881337; }
-    .ib-key  { background: #f9fafb; border: 1px solid #e5e7eb; color: #6b7280; }
-    .foot { font-size: 0.72rem; color: #aaa; font-style: italic; padding: 8px 20px 14px; }
-    code { background: #f0f0f5; border-radius: 3px; padding: 1px 4px; font-size: 0.78rem; }
-    .comp-section { max-width: 1100px; margin: 0 auto; padding: 0 20px 36px; }
-    .comp-box { background: #fff; border-radius: 10px; border: 1px solid #e8eaf0; }
-    .comp-stats { display: flex; gap: 14px; padding: 14px 20px; border-bottom: 1px solid #f0f0f5; flex-wrap: wrap; }
-    .comp-stat { background: #f9fafb; border: 1px solid #e8eaf0; border-radius: 6px; padding: 8px 14px; min-width: 160px; }
-    .comp-stat .cs-n { font-size: 0.65rem; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-    .comp-stat .cs-v { font-size: 1.05rem; font-weight: 600; color: #1a1a2e; margin-top: 2px; }
-    .comp-stat.ok .cs-v { color: #166534; }
-    .comp-stat.warn .cs-v { color: #92400e; }
-    .comp-stat.diff .cs-v { color: #7209b7; }
-    .comp-filter { display: flex; gap: 6px; padding: 10px 20px; flex-wrap: wrap; align-items: center; border-bottom: 1px solid #f0f0f5; }
-    .comp-filter-btn { padding: 4px 12px; border: 1px solid #e8eaf0; border-radius: 20px; background: #f9fafb; color: #555; font-size: 0.72rem; cursor: pointer; font-weight: 600; }
-    .comp-filter-btn.active { background: #4361ee; color: #fff; border-color: #4361ee; }
-    .comp-table-wrap { max-height: 520px; overflow-y: auto; }
-    .comp-table { width: 100%; border-collapse: collapse; font-size: 0.76rem; }
-    .comp-table th { position: sticky; top: 0; background: #f9fafb; color: #888; font-weight: 600; padding: 6px 12px; text-align: left; font-size: 0.62rem; text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid #e8eaf0; z-index: 1; }
-    .comp-table td { padding: 5px 12px; border-bottom: 1px solid #f5f5f8; vertical-align: middle; }
-    .comp-table .m-both td { background: #f0fdf4; }
-    .comp-table .m-diff td { background: #faf5ff; }
-    .comp-table .m-pponly td { background: #fffbeb; }
-    .comp-badge { display: inline-block; font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px; white-space: nowrap; }
-    .cb-both { background: #dcfce7; color: #166534; }
-    .cb-pponly { background: #fef3c7; color: #92400e; }
-    .cb-diff { background: #ede9fe; color: #6d28d9; }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RichForge — Spikes &amp; Prototypes</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    color: #f5f7fa;
+    background: #0b0c1a;
+    background-image:
+      radial-gradient(1200px 600px at 10% -10%, rgba(67,97,238,.25), transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, rgba(114,9,183,.22), transparent 60%),
+      radial-gradient(900px 600px at 50% 120%, rgba(16,185,129,.10), transparent 60%);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    padding: 28px 32px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    font-weight: 700; letter-spacing: .02em;
+  }
+  .brand-mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: linear-gradient(135deg, #4361ee 0%, #7209b7 100%);
+    box-shadow: 0 6px 20px rgba(67,97,238,.45);
+  }
+  .brand-name { font-size: 18px; }
+  .brand-name span { color: #aab3d1; font-weight: 500; }
+  .nav { font-size: 13px; color: #aab3d1; }
+  .nav a { color: #aab3d1; text-decoration: none; margin-left: 18px; }
+  .nav a:hover { color: #fff; }
+
+  main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 24px 40px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .18em;
+    color: #8c93b8; margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(34px, 6vw, 56px);
+    font-weight: 700;
+    line-height: 1.05;
+    margin-bottom: 14px;
+    background: linear-gradient(90deg, #fff 0%, #cdd5f7 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .sub {
+    color: #aab3d1; font-size: 16px; max-width: 600px;
+    margin: 0 auto 44px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 22px;
+    max-width: 880px;
+    width: 100%;
+  }
+
+  .tile {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+    padding: 26px 26px 24px;
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #f5f7fa;
+    text-decoration: none;
+    overflow: hidden;
+    transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease;
+    backdrop-filter: blur(6px);
+  }
+  .tile::before {
+    content: "";
+    position: absolute; inset: -1px;
+    border-radius: 18px;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .25s ease;
+    pointer-events: none;
+  }
+  .tile:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,255,255,0.16);
+    box-shadow: 0 24px 48px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  }
+  .tile:hover::before { opacity: 1; }
+
+  .tile .icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px;
+    font-size: 22px;
+    color: #fff;
+  }
+  .tile.ein .icon {
+    background: linear-gradient(135deg, #4361ee 0%, #1f4ed8 100%);
+    box-shadow: 0 10px 24px rgba(67,97,238,.35);
+  }
+  .tile.scan .icon {
+    background: linear-gradient(135deg, #7209b7 0%, #b026d8 100%);
+    box-shadow: 0 10px 24px rgba(114,9,183,.35);
+  }
+
+  .tile-tag {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 10px; text-transform: uppercase; letter-spacing: .12em;
+    color: #aab3d1;
+    padding: 3px 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .tile h2 {
+    font-size: 20px; font-weight: 600; margin-bottom: 6px;
+  }
+  .tile p {
+    font-size: 14px; color: #aab3d1; line-height: 1.55; margin-bottom: 22px;
+  }
+  .tile .cta {
+    margin-top: auto;
+    font-size: 13px; font-weight: 600;
+    color: #fff;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: gap .2s ease;
+  }
+  .tile:hover .cta { gap: 10px; }
+  .tile.ein .cta { color: #8aa6ff; }
+  .tile.scan .cta { color: #d39bff; }
+
+  footer {
+    text-align: center;
+    font-size: 12px;
+    color: #6b7290;
+    padding: 22px;
+  }
+  footer a { color: #aab3d1; text-decoration: none; }
+  footer a:hover { color: #fff; }
+</style>
 </head>
 <body>
+
 <header>
-  <h1>EIN Spike — Nonprofit Lookup Research</h1>
-  <p>Service tabs sorted by viability · ProPublica live (8/10 + 1000) · Every.org live (1000 via local script) · Remaining services need API keys</p>
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true"></div>
+    <div class="brand-name">RichForge <span>· spikes &amp; prototypes</span></div>
+  </div>
+  <nav class="nav">
+    <a href="https://github.com/richkingsford/ein-spike" target="_blank" rel="noopener">GitHub</a>
+  </nav>
 </header>
 
-<div class="container">
+<main>
+  <div class="eyebrow">choose a tool</div>
+  <h1>Two prototypes. One forge.</h1>
+  <p class="sub">Lightweight experiments that turn into real product. Pick one to dive in.</p>
 
-  <p class="section-label">Free services — most viable first</p>
-  <div class="tab-group" id="free-tabs"></div>
+  <div class="grid">
+    <a class="tile ein" href="./ein.html">
+      <span class="tile-tag">live data</span>
+      <div class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 21h18"/>
+          <path d="M5 21V7l7-4 7 4v14"/>
+          <path d="M9 9h.01"/>
+          <path d="M9 13h.01"/>
+          <path d="M9 17h.01"/>
+          <path d="M15 9h.01"/>
+          <path d="M15 13h.01"/>
+          <path d="M15 17h.01"/>
+        </svg>
+      </div>
+      <h2>EIN Validation</h2>
+      <p>Side-by-side nonprofit lookup across ProPublica, Every.org and the rest — viability ranked, 1000-EIN cross-source comparison.</p>
+      <span class="cta">Open the EIN spike <span aria-hidden="true">→</span></span>
+    </a>
 
-  <p class="section-label">Paid services — most viable first</p>
-  <div class="tab-group" id="paid-tabs"></div>
-
-  <div id="panels"></div>
-</div>
-<div class="comp-section" id="comp-section">
-  <p class="section-label" style="padding-top:8px">Cross-source comparison — ProPublica vs Every.org (same 1000 EINs)</p>
-  <div class="comp-box" id="comp-box">
-    <div style="padding:20px;color:#aaa;font-style:italic;font-size:0.8rem">Loading comparison…</div>
+    <a class="tile scan" href="./scanup.html">
+      <span class="tile-tag">prototype</span>
+      <div class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+          <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+          <path d="M21 17v2a2 2 0 0 1-2 2h-2"/>
+          <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M3 12h2"/>
+          <path d="M19 12h2"/>
+        </svg>
+      </div>
+      <h2>ScanUp</h2>
+      <p>Scan a photo of a public facility and auto-fill a rental listing — precise component detection with no false positives or negatives.</p>
+      <span class="cta">Scan a photo &amp; fill the form <span aria-hidden="true">→</span></span>
+    </a>
   </div>
-</div>
+</main>
 
-<!-- Optional: results from running fetch_every.js locally. Missing file is OK (silent fail). -->
-<script src="eins_1000_every.js" onerror="window.EVERY_LOAD_ERROR=true"></script>
-<script>
-const ORGS = [
-  {n:"American National Red Cross",           ein:"53-0196605", known:true},
-  {n:"United Way Worldwide",                  ein:"13-1635294", known:true},
-  {n:"Doctors Without Borders USA",           ein:"13-3433452", known:true},
-  {n:"Habitat for Humanity International",    ein:"91-1914868", known:true},
-  {n:"St. Jude Children's Research Hospital", ein:"62-0646012", known:true},
-  {n:"Room to Read",                          ein:"91-2003533", known:false},
-  {n:"Pencils of Promise",                    ein:"26-3618722", known:false},
-  {n:"charity: water",                        ein:"22-3936753", known:false},
-  {n:"Direct Relief",                         ein:"95-1831116", known:false},
-  {n:"GiveDirectly",                          ein:"27-1661997", known:false},
-];
+<footer>
+  Built with <a href="https://claude.com/claude-code" target="_blank" rel="noopener">Claude</a> · <a href="https://github.com/richkingsford/ein-spike" target="_blank" rel="noopener">source</a>
+</footer>
 
-const PP = [
-  {ein:"53-0196605", retEin:"53-0196605", retName:"American National Red Cross",            total:1,    score:125.4, rank:1},
-  {ein:"13-1635294", retEin:"13-1635294", retName:"United Way Worldwide",                   total:1,    score:123.3, rank:1},
-  {ein:"13-3433452", retEin:"13-3433452", retName:"Medecins Sans Frontieres Usa Inc",       total:1,    score:46.6,  rank:1, note:"Legal IRS name differs from common name — but correct EIN returned."},
-  {ein:"91-1914868", retEin:"54-1666448", retName:"Habitat For Humanity International (Loudoun, VA)",  total:1084, score:133.3, rank:null, insight:"1,084 chapters share this name. HQ EIN not in top 25. Fix: add city/state to query or prompt user to select chapter."},
-  {ein:"62-0646012", retEin:"62-0646012", retName:"St Jude Childrens Research Hospital Inc",total:4,    score:163.8, rank:1},
-  {ein:"91-2003533", retEin:"91-2003533", retName:"Room To Read",                           total:1,    score:136.2, rank:1},
-  {ein:"26-3618722", retEin:"26-3618722", retName:"Pencils Of Promise Incorporated",        total:1,    score:122.4, rank:1},
-  {ein:"22-3936753", retEin:"26-2949390", retName:"Water Charity",                          total:4,    score:92.6,  rank:4, insight:"Legal IRS name is 'Charity Global Inc' — common name scores only 28.3 at rank #4. Fix: resolve brand→legal name alias first, or use a service with enriched name matching (e.g. Every.org)."},
-  {ein:"95-1831116", retEin:"95-1831116", retName:"Direct Relief",                          total:4,    score:121.5, rank:1},
-  {ein:"27-1661997", retEin:"27-1661997", retName:"Givedirectly Inc",                       total:1,    score:112.9, rank:1},
-];
-
-// 1000 orgs pre-fetched via ProPublica search (server-side, 1000 unique)
-const BULK = [{e:"47-5374786",n:"Foundation Foundation",c:"Lytle Creek",s:"CA",sc:20.4},{e:"20-3487592",n:"The Foundation Foundation",c:"Phoenix",s:"AZ",sc:19.0},{e:"93-2444083",n:"Springwell Foundationi",c:"Walnut Creek",s:"CA",sc:18.3},{e:"34-1840630",n:"Jadetree Foundation Charitable Foundation",c:"Cleveland",s:"OH",sc:17.8},{e:"23-2288310",n:"Foundation For Leadership Foundation",c:"Bala Cynwyd",s:"PA",sc:17.8},{e:"71-0804608",n:"Pipe Foundation Charitable Foundation",c:"",s:"",sc:17.8},{e:"39-4233267",n:"Explosure Foundation Foundation",c:"Midwest City",s:"OK",sc:17.5},{e:"83-2624526",n:"Detv Foundation",c:"Wilmington",s:"DE",sc:17.2},{e:"88-3607946",n:"Logical Foundation",c:"Tucson",s:"AZ",sc:17.2},{e:"34-6853245",n:"Toledo Community Foundation Seneca Foundation",c:"Toledo",s:"OH",sc:17.1},{e:"34-6853246",n:"Toledo Community Foundation Algonquin Foundation",c:"Toledo",s:"OH",sc:17.1},{e:"92-0742101",n:"The Foundation",c:"Austin",s:"TX",sc:16.8},{e:"65-0415977",n:"Dunn Foundation",c:"Collegeville",s:"PA",sc:16.8},{e:"41-1513014",n:"Benedictine Foundation",c:"Minneapolis",s:"MN",sc:16.8},{e:"31-1621613",n:"Pack Foundation",c:"Henderson",s:"NV",sc:16.8},{e:"54-1734274",n:"Meat Foundation",c:"Arlington",s:"VA",sc:16.8},{e:"85-3672498",n:"Celesterling Foundation",c:"Chicago",s:"IL",sc:16.8},{e:"27-1564922",n:"Awareness Foundation",c:"Englewood",s:"FL",sc:16.8},{e:"82-3760826",n:"Chung Foundation",c:"Wilmington",s:"DE",sc:16.8},{e:"27-0549307",n:"Ujimaa Foundation",c:"Oakland",s:"CA",sc:16.8},{e:"81-2649898",n:"Armanino Foundation",c:"San Ramon",s:"CA",sc:16.8},{e:"47-4734762",n:"Seenfire Foundation",c:"San Marino",s:"CA",sc:16.8},{e:"83-3372048",n:"Minaret Foundation",c:"Richmond",s:"TX",sc:16.8},{e:"26-0907375",n:"Shora Foundation",c:"Knoxville",s:"TN",sc:16.8},{e:"27-1261375",n:"Transcend Foundation",c:"Los Angeles",s:"CA",sc:16.8},{e:"68-0363273",n:"Seaoc Foundation",c:"Sacramento",s:"CA",sc:16.8},{e:"87-3941038",n:"Obinnah Foundation",c:"Aurora",s:"CO",sc:16.8},{e:"88-4138569",n:"Jk Foundation",c:"Fayetteville",s:"AR",sc:16.8},{e:"82-1406941",n:"Napipa Foundation",c:"San Jose",s:"CA",sc:16.8},{e:"27-3951660",n:"Prism Foundation",c:"Oakland",s:"CA",sc:16.8},{e:"54-1824272",n:"Asmc Foundation",c:"Washington",s:"DC",sc:16.8},{e:"68-0370324",n:"Ael Foundation",c:"Los Altos",s:"CA",sc:16.8},{e:"20-8645308",n:"Daca Foundation",c:"Dewitt",s:"MI",sc:16.8},{e:"47-4053945",n:"Rozellestrong Foundation",c:"Oakland",s:"CA",sc:16.8},{e:"99-1161539",n:"Kcx Foundation",c:"Philadelphia",s:"PA",sc:16.8},{e:"82-2731994",n:"2240 Foundation",c:"Jackson",s:"MS",sc:16.8},{e:"81-2584082",n:"Albany11 Foundation",c:"Leesburg",s:"GA",sc:16.8},{e:"46-2274751",n:"Alyden Foundation",c:"Riverside",s:"CA",sc:16.8},{e:"82-1141301",n:"Demoore Foundation",c:"Roswell",s:"GA",sc:16.8},{e:"85-2461256",n:"Destinys Foundation",c:"Seattle",s:"WA",sc:16.8},{e:"86-1279301",n:"Earl Foundation",c:"Little Rock",s:"AR",sc:16.8},{e:"83-1156190",n:"Firemouse Foundation",c:"Menifee",s:"CA",sc:16.8},{e:"46-3769137",n:"G3 Foundation",c:"Costa Mesa",s:"CA",sc:16.8},{e:"81-2280820",n:"Hfh Foundation",c:"Nashville",s:"TN",sc:16.8},{e:"81-5073709",n:"Jgc Foundation",c:"Burbank",s:"CA",sc:16.8},{e:"81-5122134",n:"Justone Foundation",c:"Greensboro",s:"NC",sc:16.8},{e:"46-1143093",n:"Kenny Foundation",c:"Clinton",s:"MD",sc:16.8},{e:"85-2270863",n:"Kerygma Foundation",c:"Huntsville",s:"AL",sc:16.8},{e:"45-4105530",n:"Krd Foundation",c:"Boulder",s:"CO",sc:16.8},{e:"46-4636289",n:"Otr Foundation",c:"Pueblo",s:"CO",sc:16.8},{e:"27-3038305",n:"Parrot Foundation",c:"Sacramento",s:"CA",sc:16.8},{e:"84-2657861",n:"Ruwawuri Foundation",c:"Fort Worth",s:"TX",sc:16.8},{e:"47-5535768",n:"Shanes Foundation",c:"Feeding Hills",s:"MA",sc:16.8},{e:"59-3820836",n:"Torchbearers Foundation",c:"Pls Vrds Pnsl",s:"CA",sc:16.8},{e:"26-0365905",n:"Welsh Foundation",c:"Moreno Valley",s:"CA",sc:16.8},{e:"27-2518479",n:"Wordflowers Foundation",c:"Sumter",s:"SC",sc:16.8},{e:"39-2302260",n:"Avilacare Foundation",c:"Sunnyvale",s:"TX",sc:16.8},{e:"41-3900137",n:"Bridgepoint Foundation",c:"Colonia",s:"NJ",sc:16.8},{e:"82-1292374",n:"Cake Foundation",c:"Atlanta",s:"GA",sc:16.8},{e:"92-1359756",n:"Dream Foundation",c:"Stockton",s:"CA",sc:16.8},{e:"33-4126921",n:"Lifeshift Foundation",c:"Manassas Park",s:"VA",sc:16.8},{e:"33-5013224",n:"Linqfoundation Foundation",c:"Woodland Hills",s:"CA",sc:16.8},{e:"39-3075439",n:"Looproots Foundation",c:"Dover",s:"DE",sc:16.8},{e:"87-3613828",n:"Pratoriate Foundation",c:"Kent",s:"WA",sc:16.8},{e:"84-4647299",n:"Read Foundation",c:"Mt Washington",s:"KY",sc:16.8},{e:"93-1913199",n:"Reform Foundation",c:"Providence",s:"RI",sc:16.8},{e:"33-5065721",n:"Thelcrfoundation Foundation",c:"Westport",s:"CT",sc:16.8},{e:"41-1372157",n:"Economics Laboratory Foundation Ecolab Foundation",c:"Saint Paul",s:"MN",sc:16.8},{e:"92-0307266",n:"Foundation Sopurce Sanders Charitable Foundation",c:"Hot Springs",s:"AR",sc:16.8},{e:"20-1459350",n:"Foundation Source Charitable Foundation Inc",c:"Wilmington",s:"DE",sc:16.8},{e:"54-1556638",n:"The Layman Family Foundation Foundation",c:"Daleville",s:"VA",sc:16.8},{e:"82-2745984",n:"Fgm Foundation Of Delaware Foundation",c:"New Castle",s:"DE",sc:16.8},{e:"86-3720412",n:"Galliness Foundationd Inc",c:"Silver Spring",s:"MD",sc:16.6},{e:"92-0545474",n:"Foundations",c:"Henderson",s:"NV",sc:16.6},{e:"33-3056259",n:"Foundationz",c:"Fountain",s:"CO",sc:16.6},{e:"27-3529154",n:"Dmc Foundation",c:"Detroit",s:"MI",sc:16.4},{e:"74-2179425",n:"Pursuit Foundation",c:"Houston",s:"TX",sc:16.4},{e:"83-0326315",n:"Wti Foundation",c:"Laramie",s:"WY",sc:16.4},{e:"46-3476338",n:"Salal Foundation",c:"Seattle",s:"WA",sc:16.4},{e:"13-6544626",n:"Pathwork Foundation",c:"New York",s:"NY",sc:16.4},{e:"94-3387536",n:"Krl Foundation",c:"Los Altos",s:"CA",sc:16.4},{e:"61-1988533",n:"Aff Foundation",c:"Arcadia",s:"CA",sc:16.4},{e:"88-1060758",n:"Wm Foundation",c:"Stuttgart",s:"AR",sc:16.4},{e:"46-2900841",n:"Itanner Foundation",c:"El Segundo",s:"CA",sc:16.4},{e:"81-3041504",n:"Arora Foundation",c:"Richfield",s:"OH",sc:16.4},{e:"27-3335269",n:"Aufhebung Foundation",c:"Cambridge",s:"MA",sc:16.4},{e:"85-2949201",n:"Changemaker Foundation",c:"Tucson",s:"AZ",sc:16.4},{e:"86-1396506",n:"Diehard Foundation",c:"Grand Rapids",s:"MI",sc:16.4},{e:"93-4541070",n:"Fc Foundation",c:"Jersey City",s:"NJ",sc:16.4},{e:"27-4185200",n:"Filrose Foundation",c:"San Jose",s:"CA",sc:16.4},{e:"47-2085673",n:"Klorotech Foundation",c:"Spokane",s:"WA",sc:16.4},{e:"87-3513657",n:"Longview Foundation",c:"Longview",s:"TX",sc:16.4},{e:"92-2624660",n:"Nhdc Foundation",c:"Cedar Grove",s:"NJ",sc:16.4},{e:"87-1634915",n:"Peoples Foundation",c:"Philadelphia",s:"PA",sc:16.4},{e:"99-2468365",n:"Pstcedu Foundation",c:"Green Bay",s:"WI",sc:16.4},{e:"41-3640687",n:"Ascend Foundation",c:"Allendale",s:"MI",sc:16.4},{e:"39-4292451",n:"Billnip Foundation",c:"Los Angeles",s:"CA",sc:16.4},{e:"93-4192463",n:"Hancock Foundation",c:"Denver",s:"CO",sc:16.4},{e:"86-3327293",n:"Hocag Foundation",c:"Cape Coral",s:"FL",sc:16.4},{e:"85-1080849",n:"Kratom Foundation",c:"Washington",s:"DC",sc:16.4},{e:"99-4258617",n:"Healthy Hearts",c:"Red Oak",s:"TX",sc:57.4},{e:"88-3247107",n:"Healthy Hearts",c:"Lexington",s:"SC",sc:55.5},{e:"99-5019952",n:"Hearty Hearth",c:"Bellflower",s:"CA",sc:55.5},{e:"93-2972753",n:"Hearts Of Health",c:"Dallas",s:"TX",sc:55.3},{e:"93-3793111",n:"Hearts For Health",c:"New York",s:"NY",sc:55.3},{e:"82-3679705",n:"Hearts Health & Arts",c:"Seattle",s:"WA",sc:55.3},{e:"46-0563400",n:"Healthy Choice Health Fair",c:"Albuquerque",s:"NM",sc:55.1},{e:"33-3526758",n:"Stay Healthy Community Health Center",c:"N Hollywood",s:"CA",sc:50.4},{e:"87-1992220",n:"Healthy Hearts Healthy Minds Inc",c:"Three Lakes",s:"WI",sc:50.1},{e:"88-3537669",n:"Hearts & Horses For Health",c:"La Center",s:"WA",sc:50.1},{e:"41-4103351",n:"Hopeful Hearts & Health Foundation",c:"Fresno",s:"CA",sc:50.1},{e:"47-1316443",n:"Healthy Hearts Institute",c:"Pittsburg",s:"CA",sc:49.8},{e:"99-3368454",n:"Healthy Hearts Foundation",c:"Barrington",s:"RI",sc:49.8},{e:"81-5347515",n:"Military Healthy Hearts",c:"League City",s:"TX",sc:49.8},{e:"88-3379421",n:"Health Professionals For A Healthy Climate",c:"Minneapolis",s:"MN",sc:46.4},{e:"20-4719162",n:"Healthy Jacksonville Mens Health Coalition Inc",c:"Jacksonville",s:"FL",sc:46.4},{e:"82-3160887",n:"One Heart Health",c:"Saint Paul",s:"MN",sc:46.3},{e:"20-0091902",n:"Heart Health Foundation",c:"Annapolis",s:"MD",sc:46.3},{e:"99-4323392",n:"Heart And Health",c:"Cypress",s:"TX",sc:46.3},{e:"46-5682017",n:"Heart Health Now",c:"Springfield",s:"OH",sc:46.3},{e:"83-1774718",n:"I Heart Health",c:"Washington",s:"DC",sc:46.3},{e:"27-2194044",n:"Nemo Heart Health",c:"Kirksville",s:"MO",sc:46.3},{e:"33-3649544",n:"Whole Heart Health",c:"Baton Rouge",s:"LA",sc:46.3},{e:"47-3723535",n:"Inspiring Hearts Community Health Network",c:"Center Line",s:"MI",sc:45.8},{e:"36-5124517",n:"Global Hearts For Health Foundation",c:"Owatonna",s:"MN",sc:45.8},{e:"81-1373976",n:"Healthy Hearts Medical Association",c:"Chula Vista",s:"CA",sc:45.1},{e:"84-4881818",n:"Flx Healthy Hearts Inc",c:"Geneva",s:"NY",sc:45.1},{e:"87-2578440",n:"Healthy Hearts Solutions Inc",c:"Alexandria",s:"VA",sc:45.1},{e:"47-2416841",n:"Shimmering Smiles Healthy Hearts",c:"Silver Spring",s:"MD",sc:45.1},{e:"32-0822246",n:"Healthy Hearts Thrive Inc",c:"Easton",s:"MD",sc:45.1},{e:"99-4382308",n:"Operation Healthy Hearts Inc",c:"Hacienda Hts",s:"CA",sc:45.1},{e:"84-4140756",n:"Healed Hearts Ministries",c:"Pearland",s:"TX",sc:44.2},{e:"46-3568006",n:"High Healed Hearts",c:"Tallahassee",s:"FL",sc:44.2},{e:"83-3164007",n:"Montana Health Professionals For A Healthy Climate",c:"Red Lodge",s:"MT",sc:43.1},{e:"93-2110343",n:"Heath Health Foundation For Education And Research",c:"Philadelphia",s:"PA",sc:42.3},{e:"85-1220873",n:"Health & Hearts To The World Inc",c:"Albuquerque",s:"NM",sc:42.2},{e:"87-1707197",n:"A Heart For Health",c:"Goose Creek",s:"SC",sc:41.9},{e:"90-0991157",n:"Caring Heart Health Clinic",c:"Marlette",s:"MI",sc:41.9},{e:"93-3283190",n:"Heart Of Christ Health",c:"Troy",s:"MI",sc:41.9},{e:"20-4052041",n:"Hoops For Heart Health",c:"Southington",s:"CT",sc:41.9},{e:"99-0441839",n:"Partners In Heart Health",c:"Carlsbad",s:"NM",sc:41.9},{e:"46-0551183",n:"We Heart Health Inc",c:"Alameda",s:"CA",sc:41.9},{e:"20-1349403",n:"Heart Health Charities Inc",c:"Salem",s:"MA",sc:41.9},{e:"33-4197631",n:"Heart Health Horizon Corp",c:"Westwood",s:"MA",sc:41.9},{e:"85-1039223",n:"Five Hearts Institute Of Integrative Health",c:"Culver City",s:"CA",sc:41.9},{e:"31-0946146",n:"Heath",c:"Heath",s:"OH",sc:41.7},{e:"83-4647361",n:"Healthy Hearts And Paws Project",c:"Brookfield",s:"OH",sc:41.3},{e:"54-1958577",n:"Healthy Hearts Plus Ii Inc",c:"N Chesterfld",s:"VA",sc:41.3},{e:"83-1355461",n:"Foundation For Healthy Hearts Inc",c:"Woodward",s:"OK",sc:41.3},{e:"46-1054813",n:"Healthy Hearts For Life Inc",c:"Boston",s:"MA",sc:41.3},{e:"83-2306035",n:"Healthy Hearts For Africa Inc",c:"Moultrie",s:"GA",sc:41.2},{e:"84-3688755",n:"Healthy Heart Nation",c:"Corona",s:"CA",sc:40.7},{e:"93-2015724",n:"Healthy Heart Foundation",c:"Newton",s:"MA",sc:40.7},{e:"82-1040955",n:"Healthy Heart Initiative",c:"Andover",s:"MA",sc:40.7},{e:"83-4505659",n:"Hearth Heart & Hope",c:"Tumwater",s:"WA",sc:40.7},{e:"99-2150251",n:"Raven Heart Hearth",c:"Cincinnati",s:"OH",sc:40.7},{e:"83-0843756",n:"Healthy Heart Coalition",c:"Fairburn",s:"GA",sc:40.7},{e:"27-0093845",n:"Osma Health Health Plans",c:"Oklahoma City",s:"OK",sc:40.6},{e:"81-4658705",n:"Health",c:"Pembroke Pnes",s:"FL",sc:40.1},{e:"26-3896631",n:"Healthy Central Illinois C/O Peoria Health Dept",c:"Peoria",s:"IL",sc:40.1},{e:"46-1791450",n:"Heart2 Heart4 You Inc",c:"Lakewood",s:"CA",sc:40.1},{e:"20-5673587",n:"Hearts Being Healed Ministries",c:"Chico",s:"CA",sc:40.1},{e:"90-0106985",n:"Healer Of Hearts Ministries",c:"New Hope",s:"AL",sc:40.1},{e:"33-1636752",n:"Heart2 Heartz Org Corporation",c:"Suwanee",s:"GA",sc:40.1},{e:"32-0835174",n:"Healthy Heart Healthy Life Foundation Corporation",c:"Flint",s:"MI",sc:40.0},{e:"26-3722851",n:"Health Leadership Partnership",c:"Philadelphia",s:"PA",sc:39.3},{e:"46-0225483",n:"Sacred Heart Health Services",c:"Yankton",s:"SD",sc:39.2},{e:"20-8373475",n:"Hearts That Care Volunteer Health Clinic Inc",c:"Lawton",s:"OK",sc:39.1},{e:"39-4367068",n:"Roots Of Resilience Health & Healin G Collective",c:"Albuquerque",s:"NM",sc:39.1},{e:"99-3225136",n:"Ethan Dallas Hopeful Hearts Mental Health Scholarship",c:"Santee",s:"CA",sc:39.1},{e:"59-0634434",n:"Sacred Heart Health System Inc",c:"Saint Louis",s:"MO",sc:38.3},{e:"35-1875364",n:"Heart City Health Center Inc",c:"Elkhart",s:"IN",sc:38.3},{e:"57-1183283",n:"Sacred Heart Health Ventures Inc",c:"Saint Louis",s:"MO",sc:38.3},{e:"20-0029033",n:"Heart Health Of Southeast Missouri",c:"Kennett",s:"MO",sc:38.3},{e:"93-3624776",n:"Health Heart And Kidney First",c:"Menifee",s:"CA",sc:38.3},{e:"20-3919579",n:"Heart And Health Educationfoundation Inc",c:"Briarcliff Manor",s:"NY",sc:38.3},{e:"45-3944718",n:"Heart Health & Healing Ministries Inc",c:"West Palm Bch",s:"FL",sc:38.3},{e:"85-0608026",n:"Heart Health For Hopeful Hounds",c:"Downers Grove",s:"IL",sc:38.3},{e:"38-3877131",n:"Heart Of Recover Health Incorporated",c:"Minnetonka",s:"MN",sc:38.3},{e:"47-1046788",n:"Heart To Health Foundation Inc",c:"Louisville",s:"CO",sc:38.3},{e:"80-0663624",n:"Kids Heart Felt Health Inc",c:"Waxhaw",s:"NC",sc:38.3},{e:"33-2591462",n:"Sacred Heart Mental Health Foundation",c:"Olathe",s:"KS",sc:38.3},{e:"39-4265829",n:"Sacred Heart Mental Health Incinc",c:"Atlanta",s:"GA",sc:38.3},{e:"38-2715520",n:"Corewell Health",c:"Grand Rapids",s:"MI",sc:38.2},{e:"46-5718220",n:"Corewell Health",c:"Grand Rapids",s:"MI",sc:38.2},{e:"62-0582605",n:"Frontier Health",c:"Gray",s:"TN",sc:38.2},{e:"39-3378382",n:"Agatha Health",c:"Washington",s:"DC",sc:38.2},{e:"47-2736029",n:"Health First Health Plans Inc",c:"Rockledge",s:"FL",sc:38.2},{e:"93-2112307",n:"Vns Health Behavioral Health Inc",c:"New York",s:"NY",sc:38.2},{e:"46-7040854",n:"Washington Health Industry Health Trust",c:"Spokane",s:"WA",sc:38.2},{e:"58-2109954",n:"Public Health Home Health Inc",c:"Valdosta",s:"GA",sc:38.2},{e:"84-2310771",n:"Priority Health Total Health Foundation",c:"Grand Rapids",s:"MI",sc:38.2},{e:"23-7131675",n:"Forest Health Human Health Institute",c:"Corvallis",s:"OR",sc:38.2},{e:"95-3036281",n:"Pih Health Home Health Care",c:"Whittier",s:"CA",sc:38.2},{e:"92-0819922",n:"Wealth By Health Health Center",c:"Rosemead",s:"CA",sc:38.2},{e:"88-1635795",n:"Hip Hop 4 Healthy Hearts 2",c:"Washington",s:"DC",sc:38.0},{e:"27-1174063",n:"Healthy Thoughts",c:"Bensalem",s:"PA",sc:37.8},{e:"38-1360529",n:"Corewell Health",c:"Grand Rapids",s:"MI",sc:37.5},{e:"38-1358412",n:"Corewell Health",c:"Grand Rapids",s:"MI",sc:37.5},{e:"38-1297435",n:"Corewell Health",c:"Grand Rapids",s:"MI",sc:37.5},{e:"11-3843879",n:"Community2 Community",c:"Brooklyn",s:"NY",sc:47.9},{e:"99-1628675",n:"Community Commodity Computer Coaching",c:"Polk City",s:"IA",sc:38.9},{e:"38-2384012",n:"Birmingham Community House Newcomers Club Birmingham Communit",c:"Birmingham",s:"MI",sc:32.1},{e:"13-6201465",n:"Wco Westchester Community Organization Inter Church Communit",c:"Yonkers",s:"NY",sc:32.1},{e:"83-4042001",n:"Community Supporting Community",c:"Danville",s:"NH",sc:31.6},{e:"88-3509128",n:"Community To Community",c:"Austin",s:"TX",sc:31.6},{e:"93-1985313",n:"Community Creates Community",c:"La Plata",s:"MD",sc:31.6},{e:"39-3417155",n:"Community To Community",c:"Virginia Bch",s:"VA",sc:31.6},{e:"82-2646998",n:"Community",c:"Weeki Wachee",s:"FL",sc:30.4},{e:"86-1765319",n:"Community",c:"Washington",s:"DC",sc:30.4},{e:"36-3967577",n:"Community",c:"Chicago",s:"IL",sc:30.4},{e:"46-0364860",n:"Community",c:"Hill City",s:"SD",sc:30.4},{e:"39-3794537",n:"Community",c:"Lorton",s:"VA",sc:30.4},{e:"48-0853385",n:"Community",c:"Shawnee Msn",s:"KS",sc:30.4},{e:"38-2837636",n:"Community Service Community Development",c:"Detroit",s:"MI",sc:29.6},{e:"46-5431719",n:"Community Care Community Does",c:"Bethesda",s:"MD",sc:29.6},{e:"82-4863385",n:"Community Navigators Community Builders",c:"Garner",s:"NC",sc:29.6},{e:"88-0825175",n:"Community Building Community Inc",c:"Greensboro",s:"NC",sc:29.6},{e:"81-4471555",n:"Community Helping The Community",c:"Bainbridge",s:"GA",sc:29.0},{e:"26-4030614",n:"Community Ministries",c:"Paducah",s:"KY",sc:28.2},{e:"87-1638756",n:"Community Wellness Community Development Corporation",c:"Memphis",s:"TN",sc:27.9},{e:"01-0534548",n:"Community Care",c:"Bangor",s:"ME",sc:27.8},{e:"39-3307556",n:"Community Connection",c:"Hankinson",s:"ND",sc:27.8},{e:"47-1165966",n:"Community Health",c:"Denver",s:"CO",sc:27.8},{e:"84-4781808",n:"Community Life",c:"Williamston",s:"NC",sc:27.8},{e:"39-4809111",n:"Community 07",c:"Gastonia",s:"NC",sc:27.8},{e:"41-3172865",n:"Home Community",c:"Nicholasville",s:"KY",sc:27.8},{e:"23-3002271",n:"Community Lenders Community Development Corporation",c:"Souderton",s:"PA",sc:27.8},{e:"95-2895839",n:"Community Bible Community Development Corporation",c:"Pasadena",s:"CA",sc:27.8},{e:"41-2064885",n:"Community Changers Community Development Corporation",c:"Ft Washington",s:"MD",sc:27.8},{e:"93-3075344",n:"Community Harvest Community Gardens Organization",c:"Chandler",s:"AZ",sc:27.8},{e:"85-1330431",n:"Community Hub Community Development Corporation",c:"Charlotte",s:"NC",sc:27.8},{e:"84-2512748",n:"Islamic Community Outreach Community Org",c:"Dothan",s:"AL",sc:27.8},{e:"39-1562252",n:"Community Church",c:"Oshkosh",s:"WI",sc:27.3},{e:"26-1999316",n:"Quest Community",c:"West Liberty",s:"OH",sc:27.3},{e:"86-3014132",n:"Communitiy Developmental Corperation",c:"Slana",s:"AK",sc:27.2},{e:"93-4704123",n:"Communify",c:"N Chesterfld",s:"VA",sc:27.0},{e:"95-4302067",n:"Community Partners",c:"Los Angeles",s:"CA",sc:26.9},{e:"84-4867019",n:"Community Firm",c:"Denver",s:"CO",sc:26.9},{e:"94-3255070",n:"Community Initiatives",c:"Oakland",s:"CA",sc:26.9},{e:"31-0668084",n:"Heinzerling Community",c:"Columbus",s:"OH",sc:26.9},{e:"52-1349382",n:"Community Connections",c:"Washington",s:"DC",sc:26.9},{e:"94-2460211",n:"Community Bridges",c:"Watsonville",s:"CA",sc:26.9},{e:"02-0369906",n:"Hunt Community",c:"Nashua",s:"NH",sc:26.9},{e:"23-1892383",n:"Friendship Community",c:"Lititz",s:"PA",sc:26.9},{e:"05-0507426",n:"Community Musicworks",c:"Providence",s:"RI",sc:26.9},{e:"25-1612331",n:"Ecumenical Community",c:"Hershey",s:"PA",sc:26.9},{e:"38-3094108",n:"Community Rebuilders",c:"Grand Rapids",s:"MI",sc:26.9},{e:"42-0891140",n:"Calvin Community",c:"Des Moines",s:"IA",sc:26.9},{e:"91-0933023",n:"Community Frameworks",c:"Spokane",s:"WA",sc:26.9},{e:"80-0817409",n:"Gro Community",c:"Chicago",s:"IL",sc:26.9},{e:"81-3806946",n:"Community Passageways",c:"Seattle",s:"WA",sc:26.9},{e:"64-0308404",n:"Community Place",c:"Jackson",s:"MS",sc:26.9},{e:"23-7129502",n:"Community Dental",c:"Portland",s:"ME",sc:26.9},{e:"35-2024662",n:"Community Montessori",c:"New Albany",s:"IN",sc:26.9},{e:"26-0421563",n:"Community Works",c:"Greenville",s:"SC",sc:26.9},{e:"91-1656313",n:"Community Choice",c:"E Wenatchee",s:"WA",sc:26.9},{e:"36-2167735",n:"Community House",c:"Hinsdale",s:"IL",sc:26.9},{e:"38-2442660",n:"Community Homes",c:"Royal Oak",s:"MI",sc:26.9},{e:"81-3388287",n:"Beloved Community",c:"New Orleans",s:"LA",sc:26.9},{e:"84-4211454",n:"Community 43",c:"Phoenix",s:"AZ",sc:26.9},{e:"77-0716253",n:"Wellspring Community",c:"Castle Rock",s:"CO",sc:26.9},{e:"91-1700810",n:"Community Homes",c:"Bellevue",s:"WA",sc:26.9},{e:"52-1975012",n:"Community Forklift",c:"Edmonston",s:"MD",sc:26.9},{e:"27-2767920",n:"Community Pathways",c:"Portland",s:"OR",sc:26.9},{e:"85-1124839",n:"Harness Community",c:"Los Angeles",s:"CA",sc:26.9},{e:"43-1506591",n:"Community Linc",c:"Kansas City",s:"MO",sc:26.9},{e:"68-0369720",n:"Community Matters",c:"Santa Rosa",s:"CA",sc:26.9},{e:"82-2002935",n:"Inspiring Community",c:"Platteville",s:"WI",sc:26.9},{e:"84-0482690",n:"Community Link",c:"Boulder",s:"CO",sc:26.9},{e:"23-7087997",n:"Advance Community",c:"Phoenix",s:"AZ",sc:26.9},{e:"94-3212988",n:"Foodwise Community",c:"San Francisco",s:"CA",sc:26.9},{e:"23-7120875",n:"Community School",c:"Roanoke",s:"VA",sc:26.9},{e:"38-3530155",n:"Community Unlimited",c:"Union City",s:"MI",sc:26.9},{e:"13-3386904",n:"Community Impact",c:"New York",s:"NY",sc:26.9},{e:"26-1331243",n:"Recovery Community",c:"Madison",s:"TN",sc:26.9},{e:"43-1554194",n:"Community Options",c:"Chillicothe",s:"MO",sc:26.9},{e:"93-2156692",n:"Semio Community",c:"Los Angeles",s:"CA",sc:26.9},{e:"27-1037159",n:"Community Homeworks",c:"Kalamazoo",s:"MI",sc:26.9},{e:"81-4267631",n:"Momentum Community",c:"Long Beach",s:"CA",sc:26.9},{e:"61-1871636",n:"Community Cooperative",c:"Washington",s:"DC",sc:26.9},{e:"04-3607322",n:"Cultivating Community",c:"Portland",s:"ME",sc:26.9},{e:"54-2063702",n:"Community Counts",c:"Prescott Vly",s:"AZ",sc:26.9},{e:"14-1827832",n:"Community Library",c:"Cobleskill",s:"NY",sc:26.9},{e:"20-4729973",n:"Echo Community",c:"Folsom",s:"LA",sc:26.9},{e:"33-0666643",n:"Community Charities",c:"Danville",s:"CA",sc:26.9},{e:"72-0883574",n:"Willwoods Community",c:"Metairie",s:"LA",sc:26.9},{e:"93-1041187",n:"Community Pantry",c:"Hemet",s:"CA",sc:26.9},{e:"30-0197481",n:"Community Links",c:"Bradford",s:"PA",sc:26.9},{e:"46-5403427",n:"Community School",c:"Mount Desert",s:"ME",sc:26.9},{e:"41-0967271",n:"Community Thread",c:"Stillwater",s:"MN",sc:26.9},{e:"47-5090761",n:"Community Power",c:"Minneapolis",s:"MN",sc:26.9},{e:"47-3399350",n:"Covered Community",c:"Los Angeles",s:"CA",sc:26.9},{e:"61-1765796",n:"Community Builders",c:"Glenwood Spgs",s:"CO",sc:26.9},{e:"06-1719094",n:"Community Cycles",c:"Boulder",s:"CO",sc:26.9},{e:"45-3812405",n:"Community Lendingworks",c:"Springfield",s:"OR",sc:26.9},{e:"46-1325467",n:"Integrated Community",c:"Steamboat Spr",s:"CO",sc:26.9},{e:"85-4199206",n:"Community Interventions",c:"Bakersfield",s:"CA",sc:26.9},{e:"45-0635770",n:"Community First",c:"Milwaukee",s:"WI",sc:26.9},{e:"85-2244626",n:"Community Wraparound",c:"San Diego",s:"CA",sc:26.9},{e:"51-0172322",n:"Wace Educational Education",c:"Santa Maria",s:"CA",sc:54.4},{e:"43-1911006",n:"Intercounty Charitable And Educational Education",c:"Licking",s:"MO",sc:45.1},{e:"26-1642121",n:"Education Minnesota Osseo Administrative Educational Support",c:"New Brighton",s:"MN",sc:41.5},{e:"26-0310502",n:"Education Minnesota Wem Educational Support Profesionals",c:"Waterville",s:"MN",sc:41.5},{e:"80-0506251",n:"Centro Biblico Educativo Bible Education Inc",c:"N Highlands",s:"CA",sc:41.5},{e:"88-3432198",n:"African Diasporic Arts And Educatio Education Inc",c:"Winter Garden",s:"FL",sc:40.6},{e:"36-4981940",n:"Champaign County Extension Educatio Education Foundation",c:"Belvidere",s:"IL",sc:39.7},{e:"87-3071602",n:"Education",c:"Fremont",s:"CA",sc:38.5},{e:"81-4905837",n:"Goodhue County Education District Educational Support Pro",c:"Red Wing",s:"MN",sc:38.5},{e:"45-6691848",n:"Karen K St John Charitable Educatio Education Trust",c:"Appleton",s:"WI",sc:37.8},{e:"82-3485839",n:"Illinois Education Education",c:"Libertyville",s:"IL",sc:37.8},{e:"68-0342748",n:"San Joaquin County Office Of Education Educational Foundation",c:"Stockton",s:"CA",sc:35.9},{e:"81-5155325",n:"Education Incubator",c:"Honolulu",s:"HI",sc:35.3},{e:"92-1660612",n:"Earth Education",c:"Santa Fe",s:"NM",sc:35.3},{e:"20-3260772",n:"Education Minnesota Freshwater Education District",c:"Staples",s:"MN",sc:35.2},{e:"33-3818115",n:"Underdog Education",c:"Cedar City",s:"UT",sc:34.6},{e:"46-1003745",n:"Education Services Consulting",c:"Lafayette",s:"CO",sc:34.6},{e:"80-0553107",n:"Florida Education Association",c:"Alva",s:"FL",sc:34.6},{e:"37-1269707",n:"Illinois Education Association",c:"Edwardsville",s:"IL",sc:34.6},{e:"35-2386358",n:"Illinois Education Association",c:"Palatine",s:"IL",sc:34.3},{e:"75-2659683",n:"Uplift Education",c:"Dallas",s:"TX",sc:34.1},{e:"20-4040597",n:"Rocketship Education",c:"Redwood City",s:"CA",sc:34.1},{e:"81-3508420",n:"Cambiar Education",c:"San Diego",s:"CA",sc:34.1},{e:"41-1916882",n:"Education Minnesota",c:"Saint Paul",s:"MN",sc:34.1},{e:"74-2774612",n:"Orenda Education",c:"Georgetown",s:"TX",sc:34.1},{e:"34-1896478",n:"Education Alternatives",c:"Brookpark",s:"OH",sc:34.1},{e:"93-0553346",n:"Education Northwest",c:"Portland",s:"OR",sc:34.1},{e:"26-2966263",n:"Restore Education",c:"San Antonio",s:"TX",sc:34.1},{e:"47-4045034",n:"Propel Education",c:"Birmingham",s:"AL",sc:34.1},{e:"46-0585021",n:"Battelle Education",c:"Columbus",s:"OH",sc:34.1},{e:"75-1612054",n:"Lumin Education",c:"Dallas",s:"TX",sc:34.1},{e:"47-5634044",n:"Shift Education",c:"Greensboro",s:"NC",sc:34.1},{e:"86-1596460",n:"Defending Education",c:"Arlington",s:"VA",sc:34.1},{e:"82-2628337",n:"Catalyst Education",c:"New Orleans",s:"LA",sc:34.1},{e:"65-1310822",n:"Mirus Education",c:"San Diego",s:"CA",sc:34.1},{e:"20-8720291",n:"Progressnow Education",c:"Richmond",s:"VA",sc:34.1},{e:"47-2768711",n:"Summits Education",c:"Boston",s:"MA",sc:34.1},{e:"47-3761921",n:"Education Evolving",c:"Minneapolis",s:"MN",sc:34.1},{e:"46-0813836",n:"Sfv Education",c:"Sun Valley",s:"CA",sc:34.1},{e:"46-0590185",n:"Education Outside",c:"San Francisco",s:"CA",sc:34.1},{e:"83-1086088",n:"Education Reimagined",c:"Washington",s:"DC",sc:34.1},{e:"90-0676269",n:"Indigo Education",c:"Saint Paul",s:"MN",sc:34.1},{e:"84-1467174",n:"Peak Education",c:"Colorado Spgs",s:"CO",sc:34.1},{e:"46-0757820",n:"Breakfree Education",c:"Washington",s:"DC",sc:34.1},{e:"04-3606319",n:"Mira Education",c:"Durham",s:"NC",sc:34.1},{e:"82-2558971",n:"Bridge Education",c:"Sierra Madre",s:"CA",sc:34.1},{e:"82-2375504",n:"Ground Education",c:"Long Beach",s:"CA",sc:34.1},{e:"47-3886933",n:"Innovation Education",c:"Lancaster",s:"CA",sc:34.1},{e:"46-3049883",n:"Srs Education",c:"Monroe",s:"UT",sc:34.1},{e:"82-0670099",n:"Dost Education",c:"San Francisco",s:"CA",sc:34.1},{e:"87-1145016",n:"Flare Education",c:"Boston",s:"MA",sc:34.1},{e:"83-1080761",n:"Aequitas Education",c:"Gallup",s:"NM",sc:34.1},{e:"46-1134670",n:"Resilience Education",c:"Charlottesvle",s:"VA",sc:34.1},{e:"92-3659537",n:"Groww Education",c:"River Falls",s:"WI",sc:34.1},{e:"47-4020143",n:"Education Bridge",c:"South Bend",s:"IN",sc:34.1},{e:"84-4102530",n:"Momentum Education",c:"Bellaire",s:"TX",sc:34.1},{e:"20-8002436",n:"Childrens Education",c:"Saint Louis",s:"MO",sc:34.1},{e:"83-2417506",n:"Abundant Education",c:"San Jose",s:"CA",sc:34.1},{e:"21-0646544",n:"Embright Education",c:"Trenton",s:"NJ",sc:34.1},{e:"86-1787538",n:"Tasselturn Education",c:"Chicago",s:"IL",sc:34.1},{e:"86-2956026",n:"Sapience Education",c:"Tomball",s:"TX",sc:34.1},{e:"27-1247007",n:"Laryngology Education",c:"New York",s:"NY",sc:34.1},{e:"84-1627832",n:"Vestwood Education",c:"Redwood Falls",s:"MN",sc:34.1},{e:"85-0804540",n:"Revolutionary Education",c:"Humble",s:"TX",sc:34.1},{e:"86-2202893",n:"Leading Education",c:"Washington",s:"DC",sc:34.1},{e:"26-4215477",n:"Sahar Education",c:"Seattle",s:"WA",sc:34.1},{e:"46-1543808",n:"Waterfront Education",c:"Torrance",s:"CA",sc:34.1},{e:"84-4365153",n:"Education Now",c:"Raleigh",s:"NC",sc:34.1},{e:"31-0955315",n:"Education Foundation",c:"Louisville",s:"KY",sc:34.1},{e:"87-2292907",n:"Firefly Education",c:"New Orleans",s:"LA",sc:34.1},{e:"23-7126050",n:"Education Moorhead",c:"Moorhead",s:"MN",sc:34.1},{e:"42-0946019",n:"Experience Education",c:"Reno",s:"NV",sc:34.1},{e:"81-4719354",n:"Wellity Education",c:"Worthington",s:"OH",sc:34.1},{e:"81-5441167",n:"Education Destination",c:"Lafayette",s:"LA",sc:34.1},{e:"82-2242610",n:"Fact Education",c:"Royse City",s:"TX",sc:34.1},{e:"47-4557475",n:"Compass Education",c:"Hoover",s:"AL",sc:34.1},{e:"63-0321633",n:"Alcap Education",c:"Birmingham",s:"AL",sc:34.1},{e:"91-1699248",n:"Education First",c:"Seattle",s:"WA",sc:34.1},{e:"81-5150344",n:"Building Education",c:"San Francisco",s:"CA",sc:34.1},{e:"88-3801386",n:"Goodbeat Education",c:"Los Angeles",s:"CA",sc:34.1},{e:"88-3502976",n:"Education & Community",c:"Aurora",s:"CO",sc:34.1},{e:"36-4758487",n:"Destination Education",c:"Holland",s:"MI",sc:34.1},{e:"36-5002488",n:"Hope Education",c:"Florissant",s:"MO",sc:34.1},{e:"83-1585074",n:"I4 Education",c:"Redmond",s:"OR",sc:34.1},{e:"86-2935989",n:"Openspace Education",c:"Richmond",s:"VA",sc:34.1},{e:"85-3571507",n:"Latitude Education",c:"San Jose",s:"CA",sc:34.1},{e:"47-1593822",n:"Education Matters",c:"Richmond",s:"CA",sc:34.1},{e:"81-3901980",n:"Education Advance",c:"New York",s:"NY",sc:34.1},{e:"82-1216451",n:"Monarch Education",c:"Killeen",s:"TX",sc:34.1},{e:"37-1747297",n:"Energetics Education",c:"Carbondale",s:"CO",sc:34.1},{e:"23-7022724",n:"Education Fund",c:"Ridgewood",s:"NJ",sc:34.1},{e:"85-3082445",n:"Education Empowerment",c:"Southfield",s:"MI",sc:34.1},{e:"27-0455540",n:"Shaar Education",c:"Mountain View",s:"CA",sc:34.1},{e:"83-1305640",n:"Education America",c:"Saint Paul",s:"MN",sc:34.1},{e:"88-2112587",n:"Catalyst Education",c:"San Jose",s:"CA",sc:34.1},{e:"27-0812198",n:"Eidos Education",c:"Highlands",s:"NJ",sc:34.1},{e:"88-2584384",n:"Decoy Education",c:"Perham",s:"MN",sc:34.1},{e:"84-2458135",n:"Yes Education",c:"Laie",s:"HI",sc:34.1},{e:"88-1192628",n:"Stemist Education",c:"San Jose",s:"CA",sc:34.1},{e:"45-4333674",n:"Education Directions",c:"Pickerington",s:"OH",sc:34.1},{e:"88-2102341",n:"Artes Arts Booster",c:"San Fernando",s:"CA",sc:61.2},{e:"13-3991848",n:"Arts For Art Inc",c:"New York",s:"NY",sc:52.8},{e:"47-3811156",n:"Art Space Performing Arts And Visual Arts As Pava",c:"Warwick",s:"RI",sc:46.9},{e:"77-0151198",n:"Arte Americas The Mexican Arts Center",c:"Fresno",s:"CA",sc:46.7},{e:"27-5106308",n:"Art Of Ballet Performing Arts Corporation",c:"Richmond",s:"CA",sc:44.5},{e:"88-1135678",n:"Art Of Reconciliation Performing Arts Company",c:"Plymouth",s:"MN",sc:44.5},{e:"81-2199733",n:"Wagoner Arts Alliance Art Gallery & Studio",c:"Wagoner",s:"OK",sc:44.5},{e:"74-2380475",n:"The Arts Studio Dba Firehouse Art Center",c:"Longmont",s:"CO",sc:41.3},{e:"82-2320782",n:"Grand Prairie Fine Arts Academy Art Guild",c:"Grand Prairie",s:"TX",sc:41.3},{e:"23-7233319",n:"Wisconsin Fine Arts Association Ozaukee Art Center",c:"Cedarburg",s:"WI",sc:41.3},{e:"81-2291923",n:"Open Arts Performing Arts Center",c:"Bordentown",s:"NJ",sc:40.4},{e:"81-2163228",n:"Evolution Arts",c:"Lithonia",s:"GA",sc:40.3},{e:"41-2556274",n:"Hearting Arts",c:"Buellton",s:"CA",sc:40.3},{e:"74-2690099",n:"Progressive Arts Collective Pro Arts",c:"Austin",s:"TX",sc:40.3},{e:"91-6018874",n:"Western Academy Of Beaux Arts",c:"Beaux Arts",s:"WA",sc:39.8},{e:"81-4784610",n:"Dane Arts Mural Arts Inc",c:"Madison",s:"WI",sc:39.5},{e:"26-0174722",n:"Arts Hub",c:"Lafayette",s:"CO",sc:39.5},{e:"84-1767528",n:"Mooresville Arts",c:"Mooresville",s:"IN",sc:39.5},{e:"83-4551588",n:"Eagle Arts",c:"Eagle",s:"CO",sc:39.5},{e:"45-2657257",n:"Malden Arts",c:"Malden",s:"MA",sc:39.5},{e:"86-0593786",n:"Scottsdale Arts",c:"Scottsdale",s:"AZ",sc:39.0},{e:"26-2507419",n:"Arts Partnership",c:"Saint Paul",s:"MN",sc:39.0},{e:"41-1000424",n:"Arts Midwest",c:"Minneapolis",s:"MN",sc:39.0},{e:"27-1876711",n:"Crosstown Arts",c:"Memphis",s:"TN",sc:39.0},{e:"91-2044679",n:"Arts Corps",c:"Seattle",s:"WA",sc:39.0},{e:"62-0693547",n:"Arts Memphis",c:"Memphis",s:"TN",sc:39.0},{e:"95-2540759",n:"Fulcrum Arts",c:"Pasadena",s:"CA",sc:39.0},{e:"82-1786480",n:"Palenke Arts",c:"Seaside",s:"CA",sc:39.0},{e:"47-1636322",n:"Faena Arts",c:"Miami Beach",s:"FL",sc:39.0},{e:"95-4427386",n:"Venice Arts",c:"Marina Dl Rey",s:"CA",sc:39.0},{e:"26-2206214",n:"Lifetime Arts",c:"Pelham",s:"NY",sc:39.0},{e:"84-0729842",n:"Carbondale Arts",c:"Carbondale",s:"CO",sc:39.0},{e:"46-3088038",n:"Arts Connection",c:"San Bernardino",s:"CA",sc:39.0},{e:"20-4451219",n:"Upstream Arts",c:"Minneapolis",s:"MN",sc:39.0},{e:"91-1440032",n:"Arts West",c:"Seattle",s:"WA",sc:39.0},{e:"86-0941657",n:"Arts Express",c:"Tucson",s:"AZ",sc:39.0},{e:"27-1503762",n:"Nimbus Arts",c:"Saint Helena",s:"CA",sc:39.0},{e:"83-2374031",n:"Creature Arts",c:"Carrollton",s:"TX",sc:39.0},{e:"94-6121872",n:"Gualala Arts",c:"Gualala",s:"CA",sc:39.0},{e:"83-4390508",n:"Arts Impact",c:"Tacoma",s:"WA",sc:39.0},{e:"26-0383637",n:"Playhouse Arts",c:"Arcata",s:"CA",sc:39.0},{e:"43-1950379",n:"Living Arts",c:"Detroit",s:"MI",sc:39.0},{e:"99-0340564",n:"Hana Arts",c:"Hana",s:"HI",sc:39.0},{e:"38-2831910",n:"Arts & Scraps",c:"Detroit",s:"MI",sc:39.0},{e:"82-4186197",n:"Tupper Arts",c:"Tupper Lake",s:"NY",sc:39.0},{e:"01-0528831",n:"Waterfall Arts",c:"Belfast",s:"ME",sc:39.0},{e:"82-0550761",n:"Journey Arts",c:"Philadelphia",s:"PA",sc:39.0},{e:"85-2081734",n:"D3 Arts",c:"Denver",s:"CO",sc:39.0},{e:"20-0033902",n:"Amplify Arts",c:"Omaha",s:"NE",sc:39.0},{e:"25-1289972",n:"Laurel Arts",c:"Somerset",s:"PA",sc:39.0},{e:"46-1229820",n:"Clement Arts",c:"Columbus",s:"GA",sc:39.0},{e:"45-4214752",n:"1520 Arts",c:"S Salt Lake",s:"UT",sc:39.0},{e:"75-3088822",n:"Webster Arts",c:"Webster Groves",s:"MO",sc:39.0},{e:"27-0962251",n:"Palm Arts",c:"Telluride",s:"CO",sc:39.0},{e:"81-1408770",n:"Narrative Arts",c:"Wilmington",s:"NC",sc:39.0},{e:"68-0077971",n:"Celebration Arts",c:"Sacramento",s:"CA",sc:39.0},{e:"20-8540744",n:"516 Arts",c:"Albuquerque",s:"NM",sc:39.0},{e:"93-3954340",n:"Action Arts",c:"Reno",s:"NV",sc:39.0},{e:"86-1693298",n:"Arts Southeast",c:"Savannah",s:"GA",sc:39.0},{e:"31-1713221",n:"Uptown Arts",c:"Cincinnati",s:"OH",sc:39.0},{e:"35-2827359",n:"Arts Hub",c:"Albuquerque",s:"NM",sc:39.0},{e:"84-1628478",n:"Columbia Arts",c:"Hood River",s:"OR",sc:39.0},{e:"38-2226024",n:"Lowell Arts",c:"Lowell",s:"MI",sc:39.0},{e:"27-3791414",n:"Arts Asylum",c:"Kansas City",s:"MO",sc:39.0},{e:"47-5194581",n:"Meetinghouse Arts",c:"Freeport",s:"ME",sc:39.0},{e:"46-3699416",n:"Daybreak Arts",c:"Nashville",s:"TN",sc:39.0},{e:"83-4230827",n:"Arts Longview",c:"Longview",s:"TX",sc:39.0},{e:"47-1277727",n:"Arts Etc",c:"Johns Island",s:"SC",sc:39.0},{e:"81-0799334",n:"Ritz Arts",c:"Eugene",s:"OR",sc:39.0},{e:"01-0391208",n:"La Arts",c:"Auburn",s:"ME",sc:39.0},{e:"82-3669789",n:"Basin Arts",c:"Lafayette",s:"LA",sc:39.0},{e:"77-0119825",n:"Arts Outreach",c:"Los Olivos",s:"CA",sc:39.0},{e:"26-2458844",n:"Arts Cheyenne",c:"Cheyenne",s:"WY",sc:39.0},{e:"95-4416336",n:"Glendale Arts",c:"Glendale",s:"CA",sc:39.0},{e:"30-0189270",n:"Contact Arts",c:"San Diego",s:"CA",sc:39.0},{e:"74-2963791",n:"Anthropos Arts",c:"Austin",s:"TX",sc:39.0},{e:"41-1843500",n:"Arts Us",c:"Saint Paul",s:"MN",sc:39.0},{e:"85-2291367",n:"Freehorse Arts",c:"Hanover",s:"VA",sc:39.0},{e:"83-3067406",n:"Encanto Arts",c:"Seattle",s:"WA",sc:39.0},{e:"80-0190574",n:"Genryu Arts",c:"San Francisco",s:"CA",sc:39.0},{e:"20-0639943",n:"Waterloo Arts",c:"Cleveland",s:"OH",sc:39.0},{e:"77-0428527",n:"Arts Visalia",c:"Visalia",s:"CA",sc:39.0},{e:"47-1496714",n:"Arts Nest",c:"Minneapolis",s:"MN",sc:39.0},{e:"94-3048927",n:"Arts Northwest",c:"Port Angeles",s:"WA",sc:39.0},{e:"91-1660680",n:"Choral Arts",c:"Seattle",s:"WA",sc:39.0},{e:"85-1416987",n:"Rendezvous Arts",c:"Chicago",s:"IL",sc:39.0},{e:"81-4615794",n:"Cjhealing Arts",c:"Tamarac",s:"FL",sc:39.0},{e:"27-3029065",n:"Inverted Arts",c:"Owatonna",s:"MN",sc:39.0},{e:"46-4001747",n:"Guttenberg Arts",c:"Guttenberg",s:"NJ",sc:39.0},{e:"83-1467603",n:"Pulse Arts",c:"Los Angeles",s:"CA",sc:39.0},{e:"87-0950093",n:"Future Arts",c:"Seattle",s:"WA",sc:39.0},{e:"92-2216020",n:"Mess Arts",c:"New Orleans",s:"LA",sc:39.0},{e:"81-4552172",n:"Unruly Arts",c:"Toledo",s:"OH",sc:39.0},{e:"47-4234774",n:"Blackbird Arts",c:"Traverse City",s:"MI",sc:39.0},{e:"92-3517697",n:"Decentered Arts",c:"San Francisco",s:"CA",sc:39.0},{e:"23-7132108",n:"Barnsdall Arts",c:"Los Angeles",s:"CA",sc:39.0},{e:"85-2271772",n:"Equity Arts",c:"Chicago",s:"IL",sc:39.0},{e:"93-0696258",n:"Arts Central",c:"Bend",s:"OR",sc:39.0},{e:"84-4563747",n:"Everyday Arts",c:"Sun Valley",s:"CA",sc:39.0},{e:"46-4457312",n:"Transformation Arts",c:"Los Angeles",s:"CA",sc:39.0},{e:"84-2724278",n:"Childrens Children Incorporated",c:"San Jose",s:"CA",sc:76.4},{e:"26-3429099",n:"My Childrens Children",c:"Saint Louis",s:"MO",sc:76.4},{e:"33-1029754",n:"Childrens Literature For Children Inc",c:"Atlanta",s:"GA",sc:63.3},{e:"86-1985618",n:"Our Childrens Children Foundation Inc",c:"",s:"",sc:63.3},{e:"95-4718892",n:"Help The Children International Childrens Charity",c:"Calabasas",s:"CA",sc:58.3},{e:"83-4439183",n:"Children For Children",c:"Pinecrest",s:"FL",sc:53.2},{e:"27-0387549",n:"Children Helping Children",c:"Warner",s:"NH",sc:53.2},{e:"04-3645191",n:"Children Supporting Children",c:"Westerville",s:"OH",sc:53.2},{e:"27-0392766",n:"Children To Children",c:"Bonners Ferry",s:"ID",sc:53.2},{e:"95-1643332",n:"The Childrens Clinic Serving Children And Their Families",c:"Long Beach",s:"CA",sc:50.4},{e:"04-3316013",n:"Childrens Room Center For Greiving Children & Teenagers Inc",c:"Arlington",s:"MA",sc:50.4},{e:"47-5024776",n:"Children Aiding Children Inc",c:"Short Hills",s:"NJ",sc:49.9},{e:"99-4806536",n:"Children Helping Children Association",c:"Riverside",s:"CT",sc:49.9},{e:"26-3953399",n:"Children Helping Children Inc",c:"Atlanta",s:"GA",sc:49.9},{e:"81-4999261",n:"Children Helping Children Intl",c:"San Diego",s:"CA",sc:49.9},{e:"87-2301181",n:"Children Pay Children Corporation",c:"Van Nuys",s:"CA",sc:49.9},{e:"26-3812101",n:"Children To Children Foundation",c:"Southbury",s:"CT",sc:49.9},{e:"47-2028246",n:"Icare Children Helping Children",c:"Plymouth",s:"MI",sc:49.9},{e:"84-2109164",n:"Children 4 Children Inc",c:"Oceanside",s:"NY",sc:49.9},{e:"47-3554131",n:"Children For Children Ltd",c:"Avon",s:"CT",sc:49.9},{e:"33-0152722",n:"Children Having Children Inc",c:"San Diego",s:"CA",sc:49.9},{e:"65-0755386",n:"Caring Children Clothing Children Inc",c:"Stuart",s:"FL",sc:46.9},{e:"32-0477893",n:"Children Feeding Children Ministries Inc",c:"Salem",s:"VA",sc:46.9},{e:"88-2936489",n:"Children Helping Other Children Choc",c:"Washington",s:"DC",sc:46.9},{e:"26-1474622",n:"Seattle Childrens Hospital",c:"Seattle",s:"WA",sc:46.2},{e:"44-6005794",n:"Children International",c:"Kansas City",s:"MO",sc:45.5},{e:"94-3059243",n:"Children Now",c:"Oakland",s:"CA",sc:45.5},{e:"54-0761510",n:"Children Incorporated",c:"N Chesterfld",s:"VA",sc:45.5},{e:"94-3226540",n:"Manassehs Children",c:"San Francisco",s:"CA",sc:45.5},{e:"35-1148133",n:"Children Inc",c:"Columbus",s:"IN",sc:45.5},{e:"46-5109282",n:"Rwanda Children",c:"Abilene",s:"TX",sc:45.5},{e:"52-2347446",n:"Tuesdays Children",c:"Manhasset",s:"NY",sc:45.5},{e:"20-5276353",n:"Worlds Children",c:"Sisters",s:"OR",sc:45.5},{e:"83-3902147",n:"Alemap Children",c:"Shreveport",s:"LA",sc:45.5},{e:"81-2111906",n:"Noahs Children",c:"Arcadia",s:"CA",sc:45.5},{e:"80-0184362",n:"Envision Children",c:"Cincinnati",s:"OH",sc:45.5},{e:"38-3078577",n:"Michigans Children",c:"Lansing",s:"MI",sc:45.5},{e:"88-2739094",n:"Rayan Children",c:"Dublin",s:"CA",sc:45.5},{e:"71-0134556",n:"Children Up",c:"Elmhurst",s:"IL",sc:45.5},{e:"30-1409469",n:"Children First",c:"Minneapolis",s:"MN",sc:45.5},{e:"81-1725218",n:"Children Fed",c:"Terrace Park",s:"OH",sc:45.5},{e:"47-1905019",n:"Victorias Children",c:"West Liberty",s:"OH",sc:45.5},{e:"38-3086969",n:"Priority Children",c:"Flint",s:"MI",sc:45.5},{e:"80-0154868",n:"Gods Children",c:"Sarasota",s:"FL",sc:45.5},{e:"27-2006825",n:"Forgotten Children",c:"Tucson",s:"AZ",sc:45.5},{e:"93-3207652",n:"Carolines Children",c:"Victor",s:"NY",sc:45.5},{e:"92-1909012",n:"Shiloh Children",c:"Austin",s:"TX",sc:45.5},{e:"27-0543619",n:"Haitis Children",c:"Elkhorn",s:"WI",sc:45.5},{e:"83-1824114",n:"Jacobs Children",c:"Bedford",s:"TX",sc:45.5},{e:"42-1422676",n:"Children First",c:"Sioux City",s:"IA",sc:45.5},{e:"87-4029371",n:"Obatalas Children",c:"Washington",s:"DC",sc:45.5},{e:"81-2129951",n:"Fatimas Children",c:"Middletown",s:"OH",sc:45.5},{e:"81-2057444",n:"All Children",c:"Peachtree Cor",s:"GA",sc:45.5},{e:"33-4788149",n:"Children House",c:"Charlotte",s:"NC",sc:45.5},{e:"82-2565123",n:"Angels Children",c:"Stuart",s:"FL",sc:45.5},{e:"46-0736843",n:"Ayelin Children",c:"Snohomish",s:"WA",sc:45.5},{e:"93-1614932",n:"Blessed Children",c:"Charlotte",s:"NC",sc:45.5},{e:"86-1002175",n:"Caseys Children",c:"Tucson",s:"AZ",sc:45.5},{e:"46-4613127",n:"Chels Children",c:"Vienna",s:"VA",sc:45.5},{e:"46-0351813",n:"Children Center",c:"Edgemont",s:"SD",sc:45.5},{e:"32-0415361",n:"Children First",c:"Pittsfield",s:"IL",sc:45.5},{e:"26-1894153",n:"Children Hope",c:"Marietta",s:"GA",sc:45.5},{e:"83-3122597",n:"Children Impact",c:"Brisbane",s:"CA",sc:45.5},{e:"82-2586283",n:"Children Inc",c:"Escondido",s:"CA",sc:45.5},{e:"77-0524843",n:"Children Matter",c:"Hollister",s:"CA",sc:45.5},{e:"45-5303240",n:"Children Matter",c:"Lyndhurst",s:"OH",sc:45.5},{e:"82-1198387",n:"Children Matters",c:"Chicago",s:"IL",sc:45.5},{e:"31-1601008",n:"Children Yes",c:"Santa Barbara",s:"CA",sc:45.5},{e:"45-1150539",n:"Clara's Children",c:"Puyallup",s:"WA",sc:45.5},{e:"84-3908517",n:"Clothing4 Children",c:"Phoenix",s:"AZ",sc:45.5},{e:"46-2635738",n:"Esperanzas Children",c:"San Antonio",s:"TX",sc:45.5},{e:"83-2905118",n:"Everybodys Children",c:"Nashville",s:"TN",sc:45.5},{e:"92-3029445",n:"Forgotten Children",c:"Bartlett",s:"TN",sc:45.5},{e:"93-4736372",n:"Gazas Children",c:"Santa Monica",s:"CA",sc:45.5},{e:"81-1801468",n:"Givinghope2 Children",c:"Florence",s:"KY",sc:45.5},{e:"13-4138927",n:"Global Children",c:"New York",s:"NY",sc:45.5},{e:"33-2931425",n:"Help Children",c:"N Miami Beach",s:"FL",sc:45.5},{e:"26-2958159",n:"Helping Children",c:"Denver",s:"CO",sc:45.5},{e:"04-3602954",n:"Helping Children",c:"Chapel Hill",s:"NC",sc:45.5},{e:"88-2683471",n:"Helping Children",c:"Houston",s:"TX",sc:45.5},{e:"27-3141532",n:"Israels Children",c:"St Johns",s:"FL",sc:45.5},{e:"81-1935994",n:"Jah Children",c:"Poway",s:"CA",sc:45.5},{e:"13-4289232",n:"Kingdom Children",c:"Vacaville",s:"CA",sc:45.5},{e:"85-2657103",n:"Kupakwashe Children",c:"San Antonio",s:"TX",sc:45.5},{e:"93-2378471",n:"Messiahs Children",c:"Pleasant Pln",s:"OH",sc:45.5},{e:"81-2133390",n:"Miracle Children",c:"Omaha",s:"NE",sc:45.5},{e:"47-2707737",n:"Moccasin Children",c:"Fairview",s:"OK",sc:45.5},{e:"87-3290908",n:"Mother & Children",c:"Bloomington",s:"MN",sc:45.5},{e:"87-3188146",n:"Naomis Children",c:"Mount Vernon",s:"NY",sc:45.5},{e:"41-1995286",n:"Nations Children",c:"Edina",s:"MN",sc:45.5},{e:"46-3379500",n:"Nepomucenes Children",c:"Ennis",s:"TX",sc:45.5},{e:"02-0454574",n:"Nobodys Children",c:"Nashua",s:"NH",sc:45.5},{e:"81-1631928",n:"Operation Children",c:"Hillsdale",s:"MI",sc:45.5},{e:"84-4222845",n:"Our Children",c:"Saint Paul",s:"MN",sc:45.5},{e:"86-0958885",n:"Our Children",c:"Scottsdale",s:"AZ",sc:45.5},{e:"46-5320134",n:"Precious Children",c:"Sicklerville",s:"NJ",sc:45.5},{e:"87-1644942",n:"Rizpahs Children",c:"East Norriton",s:"PA",sc:45.5},{e:"47-1710003",n:"Sacred Children",c:"Lancaster",s:"TX",sc:45.5},{e:"01-0614774",n:"Santas Children",c:"Peoria",s:"AZ",sc:45.5},{e:"83-1393768",n:"Serve Children",c:"Chicago",s:"IL",sc:45.5},{e:"13-1963407",n:"Research Corporation",c:"Tucson",s:"AZ",sc:44.5},{e:"86-1325445",n:"Cicero Research",c:"Austin",s:"TX",sc:44.5},{e:"84-2724646",n:"Nreca Research",c:"Arlington",s:"VA",sc:44.5},{e:"52-1609875",n:"Research America",c:"Arlington",s:"VA",sc:44.5},{e:"87-0796305",n:"Mercy Research",c:"Springfield",s:"MO",sc:44.5},{e:"82-4585188",n:"Research Institutes",c:"Springfielf",s:"VA",sc:44.5},{e:"65-1268370",n:"Theiss Research",c:"La Jolla",s:"CA",sc:44.5},{e:"83-3619272",n:"Research Update",c:"Humble",s:"TX",sc:44.5},{e:"62-1438533",n:"Research Inc",c:"Memphis",s:"TN",sc:44.5},{e:"45-3989386",n:"Leverage Research",c:"St Petersburg",s:"FL",sc:44.5},{e:"91-1238310",n:"Lushootseed Research",c:"Seattle",s:"WA",sc:44.5},{e:"33-1519495",n:"Sentinel Research",c:"Austin",s:"TX",sc:44.5},{e:"47-4170205",n:"Nextgen Research",c:"Greenville",s:"SC",sc:44.5},{e:"37-2120626",n:"Renegade Research",c:"Brighton",s:"MI",sc:44.5},{e:"82-3612783",n:"Sweetwater Research",c:"West Plains",s:"MO",sc:44.5},{e:"99-3849338",n:"Contramont Research",c:"Lexington",s:"MA",sc:44.5},{e:"86-1463575",n:"Trib Research",c:"Arcata",s:"CA",sc:44.5},{e:"99-1011576",n:"Research Vietnam",c:"Portland",s:"OR",sc:44.5},{e:"20-2006227",n:"Trilience Research",c:"Pasadena",s:"CA",sc:44.5},{e:"57-1222227",n:"Ofm Research",c:"Seattle",s:"WA",sc:44.5},{e:"99-3134941",n:"Research Girl",c:"Glastonbury",s:"CT",sc:44.5},{e:"81-4248505",n:"Heliophysics Research",c:"Albuquerque",s:"NM",sc:44.5},{e:"85-2689378",n:"7 Research",c:"Atlanta",s:"GA",sc:44.5},{e:"27-1029546",n:"Childlaw Research",c:"Oxnard",s:"CA",sc:44.5},{e:"93-3454958",n:"Civance Research",c:"Houston",s:"TX",sc:44.5},{e:"82-1888265",n:"Crown Research",c:"Las Vegas",s:"NV",sc:44.5},{e:"33-3610353",n:"Elis Research",c:"Ashburn",s:"VA",sc:44.5},{e:"82-1905497",n:"Gopal Research",c:"Seattle",s:"WA",sc:44.5},{e:"93-3274801",n:"Health Research",c:"San Antonio",s:"TX",sc:44.5},{e:"95-4498933",n:"Helio Research",c:"La Crescenta",s:"CA",sc:44.5},{e:"84-1604397",n:"Hydroecologic Research",c:"Boulder",s:"CO",sc:44.5},{e:"94-3283353",n:"Innovation Research",c:"Cascade",s:"MT",sc:44.5},{e:"92-1263301",n:"Longfield Research",c:"Tucson",s:"AZ",sc:44.5},{e:"85-0573754",n:"Majam Research",c:"Florence",s:"KY",sc:44.5},{e:"46-2299831",n:"Multivision Research",c:"Stockton",s:"CA",sc:44.5},{e:"81-2491046",n:"Nad Research",c:"Springfield",s:"LA",sc:44.5},{e:"85-2093035",n:"Portal Research",c:"Minneapolis",s:"MN",sc:44.5},{e:"86-1533108",n:"Psychoactive Research",c:"Ann Arbor",s:"MI",sc:44.5},{e:"35-2477035",n:"Research Can",c:"Seattle",s:"WA",sc:44.5},{e:"92-1142769",n:"Revolutionary Research",c:"Sacramento",s:"CA",sc:44.5},{e:"82-3521274",n:"Rpg Research",c:"Spokane",s:"WA",sc:44.5},{e:"82-1788766",n:"Scientificall Research",c:"Tarzana",s:"CA",sc:44.5},{e:"99-1105260",n:"Seed Research",c:"Washington",s:"DC",sc:44.5},{e:"92-3301525",n:"Sustainbl Research",c:"Raleigh",s:"NC",sc:44.5},{e:"91-1652529",n:"Terramar Research",c:"Santa Barbara",s:"CA",sc:44.5},{e:"46-4147139",n:"Themis Research",c:"Katy",s:"TX",sc:44.5},{e:"82-1684932",n:"Tiananmen Research",c:"Arcadia",s:"CA",sc:44.5},{e:"88-2144385",n:"Tni Research",c:"Falls Church",s:"VA",sc:44.5},{e:"92-1900643",n:"Transparensee Research",c:"Highland Vlg",s:"TX",sc:44.5},{e:"99-4995942",n:"Tsn Research",c:"Des Moines",s:"WA",sc:44.5},{e:"43-1660269",n:"Wellness Research",c:"Saint Charles",s:"MO",sc:44.5},{e:"46-5578453",n:"Wh Research",c:"Bryn Mawr",s:"PA",sc:44.5},{e:"39-3040122",n:"Anselm Research",c:"Santa Cruz",s:"CA",sc:44.5},{e:"33-4113765",n:"Balance Research",c:"Bellingham",s:"WA",sc:44.5},{e:"47-5126799",n:"Biocollective Research",c:"Parker",s:"CO",sc:44.5},{e:"88-2754770",n:"Bioshield Research",c:"Scottsdale",s:"AZ",sc:44.5},{e:"93-6036663",n:"Christian Research",c:"Beaverton",s:"OR",sc:44.5},{e:"39-2211730",n:"Everest Research",c:"Cape Girardeau",s:"MO",sc:44.5},{e:"87-4184046",n:"Frontier Research",c:"Falls Church",s:"VA",sc:44.5},{e:"90-0664290",n:"Hood Research",c:"Detroit",s:"MI",sc:44.5},{e:"92-1150730",n:"Imgen Research",c:"Las Vegas",s:"NV",sc:44.5},{e:"39-2886672",n:"Inversion Research",c:"Washington",s:"DC",sc:44.5},{e:"82-2260876",n:"Jenome Research",c:"",s:"",sc:44.5},{e:"39-2638443",n:"Magnifying Research",c:"Colorado Spgs",s:"CO",sc:44.5},{e:"41-2767653",n:"Ncai Research",c:"Mars Hill",s:"NC",sc:44.5},{e:"87-1400018",n:"Omc Research",c:"Beverly Hills",s:"CA",sc:44.5},{e:"84-3500483",n:"Research Collective",c:"Cheyenne",s:"WY",sc:44.5},{e:"93-4558300",n:"Research Insights",c:"Leola",s:"PA",sc:44.5},{e:"33-4300795",n:"Research Lifeline",c:"Suwanee",s:"GA",sc:44.5},{e:"87-3521661",n:"Saatvik Research",c:"Silver Spgs",s:"NV",sc:44.5},{e:"33-2515752",n:"Tribe Research",c:"Belmont",s:"CA",sc:44.5},{e:"71-0675830",n:"Biomedical Research Foundation Medical Research 151",c:"Little Rock",s:"AR",sc:43.3},{e:"87-4511825",n:"Research Solutions Inc",c:"Jonesboro",s:"AR",sc:41.9},{e:"99-1475650",n:"Rhiza Research Inc",c:"Oakland",s:"CA",sc:41.9},{e:"83-2899685",n:"Carthana Charity Research",c:"Baltimore",s:"MD",sc:41.9},{e:"81-5482065",n:"Inpursuit Research Corporation",c:"Denver",s:"CO",sc:41.9},{e:"47-1822038",n:"Ksi Research Inc",c:"Pittsburgh",s:"PA",sc:41.9},{e:"39-3504937",n:"Blackbox Research",c:"Albuquerque",s:"NM",sc:41.8},{e:"93-3271077",n:"Wise Research",c:"Houston",s:"TX",sc:41.8},{e:"99-4524487",n:"Runs4 Research",c:"Ludlow",s:"VT",sc:41.8},{e:"56-1954002",n:"Association Of Clinical Research Professionals",c:"Research Triangle Park",s:"NC",sc:41.5},{e:"47-1198815",n:"Perk Medical Research",c:"St Petersburg",s:"FL",sc:41.1},{e:"36-4330967",n:"Mpn Research Foundation",c:"Chicago",s:"IL",sc:40.3},{e:"83-0908715",n:"Research Triangle Cleantech",c:"Raleigh",s:"NC",sc:40.3},{e:"56-0686338",n:"Research Triangle Institute",c:"Durham",s:"NC",sc:39.9},{e:"74-1070544",n:"Southwest Research Institute",c:"San Antonio",s:"TX",sc:39.9},{e:"33-0435954",n:"Scripps Research Institute",c:"La Jolla",s:"CA",sc:39.9},{e:"35-1052049",n:"Purdue Research Foundation",c:"West Lafayette",s:"IN",sc:39.9},{e:"95-3432210",n:"Beckman Research Institute",c:"Duarte",s:"CA",sc:39.9},{e:"13-2593244",n:"Riverside Research Institute",c:"Fairfax",s:"VA",sc:39.9},{e:"87-1920284",n:"Arc Research Institute",c:"Palo Alto",s:"CA",sc:39.9},{e:"52-1654453",n:"Childrens Research Institute",c:"Washington",s:"DC",sc:39.9},{e:"75-1921898",n:"Baylor Research Institute",c:"Dallas",s:"TX",sc:39.9},{e:"45-5124360",n:"Detroit Education & Research",c:"Dallas",s:"TX",sc:39.9},{e:"82-1443757",n:"Applied Research Institute",c:"Bloomington",s:"IN",sc:39.9},{e:"88-3013217",n:"Convergent Research Inc",c:"Cambridge",s:"MA",sc:39.9},{e:"52-1752653",n:"Cardiovascular Research Foundation",c:"New York",s:"NY",sc:39.9},{e:"26-0150662",n:"Gordon Research Conferences",c:"E Greenwich",s:"RI",sc:39.9},{e:"63-0288868",n:"Southern Research Institute",c:"Birmingham",s:"AL",sc:39.9},{e:"20-0881724",n:"Pew Research Center",c:"Washington",s:"DC",sc:39.9},{e:"27-2515889",n:"Societe Maxcen Math Maxcen Math Society",c:"Canada",s:"",sc:37.3},{e:"38-2371781",n:"Calvin Studies Society Studiorum Calvini Societas",c:"Grand Rapids",s:"MI",sc:34.5},{e:"81-3033307",n:"Rosenwald Foundation Society Hill",c:"Society Hill",s:"SC",sc:33.9},{e:"98-6008060",n:"International Society Of Limnology Societas Internationalis Limnologi",c:"Grosse Pt Wds",s:"MI",sc:32.0},{e:"22-2222429",n:"Societa Disan Giovambattista St John The Baptist Society",c:"Hammonton",s:"NJ",sc:30.4},{e:"46-1824041",n:"Society Soulutions",c:"Alexandria",s:"VA",sc:30.4},{e:"73-1020241",n:"Oklahoma Society",c:"Moore",s:"OK",sc:30.4},{e:"77-0015113",n:"The Trinosophia Society Trinosophia Society",c:"Redwood City",s:"CA",sc:30.3},{e:"41-2123090",n:"Friends Of The Society Hill Library",c:"Society Hill",s:"SC",sc:30.1},{e:"22-3768540",n:"Society Of Rosicrucians & Societas Rosicruciana In America Inc",c:"New Prt Rchy",s:"FL",sc:29.8},{e:"88-3188558",n:"Up Society",c:"Pasco",s:"WA",sc:29.8},{e:"41-2224033",n:"American Iris Society",c:"Boise",s:"ID",sc:29.4},{e:"41-0706141",n:"Ebenezer Society",c:"Edina",s:"MN",sc:29.4},{e:"54-1650477",n:"Internet Society",c:"Fredericksburg",s:"VA",sc:29.4},{e:"53-0167933",n:"Wilderness Society",c:"Washington",s:"DC",sc:29.4},{e:"13-3234632",n:"Asia Society",c:"New York",s:"NY",sc:29.4},{e:"73-0531256",n:"Endocrine Society",c:"Washington",s:"DC",sc:29.4},{e:"23-7278668",n:"Riverbanks Society",c:"Columbia",s:"SC",sc:29.4},{e:"84-0563440",n:"Luke Society",c:"Sioux Falls",s:"SD",sc:29.4},{e:"36-2181994",n:"Cradle Society",c:"Evanston",s:"IL",sc:29.4},{e:"52-6050847",n:"Biophysical Society",c:"Bethesda",s:"MD",sc:29.4},{e:"23-7348742",n:"Transplantation Society",c:"Canada",s:"",sc:29.4},{e:"41-0706100",n:"Aftenro Society",c:"Duluth",s:"MN",sc:29.4},{e:"52-1714111",n:"Korea Society",c:"New York",s:"NY",sc:29.4},{e:"41-2001751",n:"Laboure Society",c:"Eagan",s:"MN",sc:29.4},{e:"91-2051340",n:"Mockingbird Society",c:"Seattle",s:"WA",sc:29.4},{e:"23-7282033",n:"Pilgrim Society",c:"Plymouth",s:"MA",sc:29.4},{e:"94-6122250",n:"Vesper Society",c:"San Francisco",s:"CA",sc:29.4},{e:"94-3019570",n:"Protein Society",c:"Hacienda Hts",s:"CA",sc:29.4},{e:"23-7007115",n:"Freshwater Society",c:"Saint Paul",s:"MN",sc:29.4},{e:"38-1950845",n:"Germania Society",c:"Cincinnati",s:"OH",sc:29.4},{e:"22-3508064",n:"Orion Society",c:"Gt Barrington",s:"MA",sc:29.4},{e:"95-6068051",n:"Aetherius Society",c:"Los Angeles",s:"CA",sc:29.4},{e:"20-1114583",n:"Emmaus Society",c:"Hillsboro",s:"OR",sc:29.4},{e:"23-7348162",n:"Hip Society",c:"Schaumburg",s:"IL",sc:29.4},{e:"35-6069479",n:"Penrod Society",c:"Indianapolis",s:"IN",sc:29.4},{e:"22-2688274",n:"Pennsylvania Society",c:"Willow Grove",s:"PA",sc:29.4},{e:"95-4550781",n:"Skeptic Society",c:"Santa Barbara",s:"CA",sc:29.4},{e:"45-1080688",n:"Tetiaroa Society",c:"Bellevue",s:"WA",sc:29.4},{e:"58-1346873",n:"Shock Society",c:"Rockville",s:"MD",sc:29.4},{e:"36-6151680",n:"Philadelphia Society",c:"Grand Rapids",s:"MI",sc:29.4},{e:"84-0751591",n:"Masonry Society",c:"Fort Collins",s:"CO",sc:29.4},{e:"47-3686988",n:"Peacekeeper Society",c:"Toppenish",s:"WA",sc:29.4},{e:"77-0695791",n:"Somang Society",c:"Cypress",s:"CA",sc:29.4},{e:"04-6129772",n:"Paleontological Society",c:"Westminster",s:"CO",sc:29.4},{e:"52-1563085",n:"Oceanography Society",c:"Rockville",s:"MD",sc:29.4},{e:"06-6026060",n:"Widows Society",c:"Avon",s:"CT",sc:29.4},{e:"23-6417452",n:"Pennsbury Society",c:"Morrisville",s:"PA",sc:29.4},{e:"46-4657948",n:"Impact Society",c:"New York",s:"NY",sc:29.4},{e:"84-3290134",n:"Backpack Society",c:"Hghlnds Ranch",s:"CO",sc:29.4},{e:"46-3654467",n:"Roosevelt Society",c:"Hudson",s:"WI",sc:29.3},{e:"31-1803659",n:"Leadachild Society",c:"Olathe",s:"KS",sc:29.3},{e:"76-0655270",n:"Mercer Society",c:"Humble",s:"TX",sc:29.3},{e:"52-0783490",n:"Geochemical Society",c:"Alexandria",s:"VA",sc:29.3},{e:"46-3090292",n:"917 Society",c:"Nashville",s:"TN",sc:29.3},{e:"23-7376002",n:"Hindu Society",c:"Medinah",s:"IL",sc:29.3},{e:"04-6069834",n:"Fragment Society",c:"Boston",s:"MA",sc:29.3},{e:"93-1411468",n:"Hippocratic Society",c:"Raleigh",s:"NC",sc:29.3},{e:"72-0331230",n:"Syntax Society",c:"New Orleans",s:"LA",sc:29.3},{e:"16-0979095",n:"Cobblestone Society",c:"Albion",s:"NY",sc:29.3},{e:"23-7318073",n:"Sonshine Society",c:"Lynnwood",s:"WA",sc:29.3},{e:"13-6115416",n:"Manuscript Society",c:"Surfside",s:"FL",sc:29.3},{e:"99-3123437",n:"Eagle Society",c:"Franklin",s:"TN",sc:29.3},{e:"35-0366472",n:"Harmony Society",c:"Vincennes",s:"IN",sc:29.3},{e:"45-4246656",n:"Neurohospitalist Society",c:"Roseville",s:"CA",sc:29.3},{e:"85-2055084",n:"Spacemakers Society",c:"Cambridge",s:"MA",sc:29.3},{e:"99-1467206",n:"Remembrance Society",c:"Alexandria",s:"VA",sc:29.3},{e:"38-3723902",n:"Lyra Society",c:"Philadelphia",s:"PA",sc:29.3},{e:"47-4530120",n:"Parnassus Society",c:"Irvine",s:"CA",sc:29.3},{e:"04-3331908",n:"Pinnacle Society",c:"Huffman",s:"TX",sc:29.3},{e:"74-3165462",n:"Gohan Society",c:"New York",s:"NY",sc:29.3},{e:"85-3042686",n:"Honeybee Society",c:"Knott",s:"TX",sc:29.3},{e:"74-1444232",n:"Heritage Society",c:"Houston",s:"TX",sc:29.3},{e:"13-3106816",n:"Papageno Society",c:"New York",s:"NY",sc:29.3},{e:"82-4007001",n:"Milton Society",c:"New Orleans",s:"LA",sc:29.3},{e:"23-7080633",n:"Musart Society",c:"Cleveland",s:"OH",sc:29.3},{e:"82-2531141",n:"Polyphonia Society",c:"Philadelphia",s:"PA",sc:29.3},{e:"22-3098990",n:"Histiocyte Society",c:"Pitman",s:"NJ",sc:29.3},{e:"83-1178410",n:"Love Society",c:"Tempe",s:"AZ",sc:29.3},{e:"23-0488400",n:"Concordia Society",c:"Altoona",s:"PA",sc:29.3},{e:"22-6059828",n:"Gesneriad Society",c:"Seattle",s:"WA",sc:29.3},{e:"22-2415111",n:"Waterbird Society",c:"La Crosse",s:"WI",sc:29.3},{e:"36-4762341",n:"Coleopterists Society",c:"Sacramento",s:"CA",sc:29.3},{e:"72-1166065",n:"Daguerreian Society",c:"Bridgeville",s:"PA",sc:29.3},{e:"84-1774304",n:"Hamilton Society",c:"Easton",s:"PA",sc:29.3},{e:"61-1578840",n:"Anglosphere Society",c:"Washington",s:"DC",sc:29.3},{e:"23-7303020",n:"Lepidopterists Society",c:"Bolivar",s:"PA",sc:29.3},{e:"77-0015182",n:"Atrium Society",c:"Westbrook",s:"CT",sc:29.3},{e:"45-2470786",n:"Evergreen Society",c:"Marietta",s:"GA",sc:29.3},{e:"85-2831854",n:"Benevolent Society",c:"Detroit",s:"MI",sc:29.3},{e:"88-1244194",n:"Briones Society",c:"San Francisco",s:"CA",sc:29.3},{e:"23-7212847",n:"Coblentz Society",c:"Napa",s:"CA",sc:29.3},{e:"94-3219727",n:"Elios Society",c:"Los Gatos",s:"CA",sc:29.3},{e:"51-0374652",n:"Hummingbird Society",c:"Sedona",s:"AZ",sc:29.3},{e:"95-3899980",n:"Cecchetti Society",c:"San Diego",s:"CA",sc:29.3},{e:"52-1173036",n:"Crustacean Society",c:"Herndon",s:"VA",sc:29.3},{e:"83-3324181",n:"Rose Society",c:"Huntsville",s:"AL",sc:29.3},{e:"51-0172747",n:"Kams Society",c:"Honolulu",s:"HI",sc:29.3},{e:"45-5577241",n:"Society Foundation",c:"Tallahassee",s:"FL",sc:29.3},{e:"87-2499706",n:"Spotlight Society",c:"Sandusky",s:"OH",sc:29.3},{e:"80-0866636",n:"Centre County Cancer Center",c:"State College",s:"PA",sc:41.1},{e:"59-1775259",n:"Centre Community Center Inc",c:"Pleasant Gdn",s:"NC",sc:41.1},{e:"46-0871813",n:"Centre County Childrens Advocacy Center",c:"State College",s:"PA",sc:37.6},{e:"27-2769710",n:"Centre County Senior Center Coalition",c:"State College",s:"PA",sc:37.6},{e:"77-0370605",n:"Centre Pointe Christian Center Inc",c:"Esclaon",s:"CA",sc:37.6},{e:"20-4931313",n:"Centra Florida Wildlife Center",c:"Okeechobee",s:"FL",sc:37.4},{e:"47-3014506",n:"Bible Centered Christian Center",c:"Greenville",s:"NC",sc:37.4},{e:"31-1704917",n:"New Century Center",c:"Concord",s:"CA",sc:35.6},{e:"51-0204187",n:"Century Christian Center",c:"Lynwood",s:"CA",sc:35.6},{e:"81-3361907",n:"Center Angels",c:"Center",s:"ND",sc:35.3},{e:"20-3003912",n:"El Centro Regional Medical Center Foundation",c:"El Centro",s:"CA",sc:35.3},{e:"33-4882111",n:"Center Point Community Outreach Center",c:"Center Point",s:"AL",sc:34.2},{e:"47-4075019",n:"Dala Center",c:"Valley Center",s:"CA",sc:33.3},{e:"36-3551426",n:"Monroe Center",c:"Monroe Center",s:"IL",sc:33.3},{e:"54-1270022",n:"Center Cross",c:"Center Cross",s:"VA",sc:33.3},{e:"47-0595026",n:"Clay Center Community Medical Center Inc",c:"Clay Center",s:"NE",sc:32.6},{e:"36-4643855",n:"Center Band Boosters",c:"Center",s:"TX",sc:32.4},{e:"45-0374237",n:"Center Community Club",c:"Center",s:"ND",sc:32.4},{e:"85-3816647",n:"Amputee Center",c:"Parkersburg",s:"WV",sc:32.3},{e:"92-0754379",n:"Center Community Center",c:"Springfield",s:"MA",sc:32.3},{e:"23-2992686",n:"First Century Worship Center",c:"Reading",s:"PA",sc:32.2},{e:"83-0737844",n:"Center For Wellbeing Centro Bienestar Inc",c:"Stamford",s:"CT",sc:31.5},{e:"75-3198763",n:"Center For Transformation International Centro De",c:"Orlando",s:"FL",sc:31.5},{e:"80-0524425",n:"Centro Cristiano Salem Salem Cristian Center",c:"Lawrence",s:"MA",sc:31.5},{e:"93-3831778",n:"Centro De Esperanza Center Of Hope",c:"Muskegon",s:"MI",sc:31.5},{e:"76-0514873",n:"Centro De Fe Faith Center Church",c:"Pearland",s:"TX",sc:31.5},{e:"20-3144166",n:"Centro Evangelistico Internacional International Evangelical Center",c:"Hialeah",s:"FL",sc:31.5},{e:"57-1092551",n:"Centro Internacional Crustiano International Christian Center",c:"Greenville",s:"SC",sc:31.5},{e:"83-1598670",n:"Center Park Board Committee",c:"Center",s:"MO",sc:31.2},{e:"85-0428041",n:"Center",c:"Santa Fe",s:"NM",sc:31.2},{e:"52-2420945",n:"Family Care Center",c:"Centre",s:"AL",sc:31.2},{e:"42-0796764",n:"Sioux Center Health",c:"Sioux Center",s:"IA",sc:30.4},{e:"37-1593312",n:"Mycare Health Center",c:"Center Line",s:"MI",sc:30.4},{e:"42-1465918",n:"Sioux Center Foundation",c:"Sioux Center",s:"IA",sc:30.4},{e:"20-0756495",n:"Center Clinic Incorporated",c:"Dodge Center",s:"MN",sc:30.4},{e:"25-1268683",n:"Mahoning Medical Center",c:"Marion Center",s:"PA",sc:30.4},{e:"48-0960732",n:"Center Theatre Inc",c:"Smith Center",s:"KS",sc:30.4},{e:"84-5098844",n:"Winnipesaukee Wellness Center",c:"Center Harbor",s:"NH",sc:30.4},{e:"45-3201034",n:"Dodge Center Foundation",c:"Dodge Center",s:"MN",sc:30.4},{e:"48-1179667",n:"Smith Center Inc",c:"Smith Center",s:"KS",sc:30.4},{e:"68-0183689",n:"Viha Meditation Center",c:"Valley Center",s:"CA",sc:30.4},{e:"47-4004032",n:"Promote Valley Center",c:"Valley Center",s:"CA",sc:30.4},{e:"87-4279308",n:"Center Point Pto",c:"Center Point",s:"TX",sc:30.4},{e:"88-3322568",n:"Grundy Center Smaartans",c:"Grundy Center",s:"IA",sc:30.4},{e:"47-2387301",n:"La Center United",c:"La Center",s:"WA",sc:30.4},{e:"03-0343987",n:"Rural Justice Center",c:"Center Conway",s:"NH",sc:30.4},{e:"83-3020830",n:"Valley Center Gateway",c:"Valley Center",s:"CA",sc:30.4},{e:"27-0624882",n:"Valley Center Symphony",c:"Valley Center",s:"CA",sc:30.4},{e:"41-3694966",n:"Royal Center Athletics",c:"Royal Center",s:"IN",sc:30.4},{e:"48-6149575",n:"Yates Center Umc",c:"Yates Center",s:"KS",sc:30.4},{e:"38-3856776",n:"Joy Center Learning Center",c:"Camp Hill",s:"PA",sc:30.3},{e:"94-2240918",n:"Oak Center Cultural Center",c:"Oakland",s:"CA",sc:30.3},{e:"47-2459167",n:"Center Eaton Community Center",c:"Charlotte",s:"MI",sc:30.3},{e:"75-0915151",n:"Center Country Club Inc",c:"Center",s:"TX",sc:30.1},{e:"47-2117199",n:"Center Viking Youth Club",c:"Center",s:"CO",sc:30.1},{e:"43-1114066",n:"Center Seniors Housing Inc",c:"Center",s:"MO",sc:30.1},{e:"75-2305490",n:"Center Christian Fellowship Inc",c:"Center",s:"TX",sc:30.1},{e:"82-3330692",n:"Center Community Food Pantry",c:"Center",s:"MO",sc:30.1},{e:"99-2424691",n:"Center Stanton Elementary Pto",c:"Center",s:"ND",sc:30.1},{e:"82-1782267",n:"Haggai Center Inc",c:"Center Point",s:"AL",sc:29.7},{e:"22-3008377",n:"Padmasambhava Buddhist Center",c:"Sidney Center",s:"NY",sc:29.7},{e:"83-3738842",n:"Youth Center Life Center",c:"Columbus",s:"GA",sc:29.7},{e:"83-2109792",n:"Charnwood Center Inc",c:"Newton Centre",s:"MA",sc:29.5},{e:"45-3641278",n:"Kingdom Kids Learning Center Supporting Christ Centered",c:"Huron",s:"SD",sc:29.5},{e:"95-4423356",n:"Vaughn Next Century Learning Center",c:"San Fernando",s:"CA",sc:29.4},{e:"95-3512392",n:"Century Center For Economic Opportunity",c:"Lennox",s:"CA",sc:29.4},{e:"38-3514809",n:"Michigan New Century Chinese Center",c:"Northville",s:"MI",sc:29.4},{e:"95-4813176",n:"21 Century World Mission Center",c:"Buena Park",s:"CA",sc:29.4},{e:"95-4754166",n:"Century Community Childrens Center Inc",c:"Culver City",s:"CA",sc:29.4},{e:"20-2437939",n:"Disciple Center New Century Church",c:"Palmdale",s:"CA",sc:29.4},{e:"93-4526639",n:"Church Centre",c:"Centre",s:"AL",sc:29.4},{e:"52-2031912",n:"Centre Chretien De La Victoire Christian Victory Center",c:"Laurel",s:"MD",sc:29.4},{e:"82-0620681",n:"Lewis Center Sharks Inc",c:"Lewis Center",s:"OH",sc:29.2},{e:"99-3821394",n:"La Center Arts Council",c:"La Center",s:"WA",sc:29.2},{e:"37-1590653",n:"Bahais Of Valley Center",c:"Valley Center",s:"CA",sc:29.2},{e:"27-1492355",n:"Centro De Trabajadores Unidos United Workers Center",c:"Chicago",s:"IL",sc:29.2},{e:"95-4131307",n:"Centro Comunitario Sol Del Valle Community Center",c:"Sun Valley",s:"CA",sc:29.2},{e:"85-3971279",n:"Centro De Orientacion Familiar Family Orientation Center",c:"Spokane Vly",s:"WA",sc:29.2},{e:"30-0567397",n:"Centro Cristiano El Shaddai Christian Center Inc",c:"Naples",s:"FL",sc:29.2},{e:"90-0154458",n:"Centro Cristiano Vida Life Christian Center Inc",c:"Miramar",s:"FL",sc:29.2},{e:"32-0825576",n:"Hummingbirds Center Research Institute Centro Colibri Inc",c:"New York",s:"NY",sc:29.2},{e:"82-5381529",n:"Shelby County Exposition Center Inc",c:"Center",s:"TX",sc:29.1},{e:"63-0587971",n:"Cherokee Recreation Center Inc",c:"Centre",s:"AL",sc:28.8},{e:"81-4674861",n:"Sioux Center Ffa Alumni",c:"Sioux Center",s:"IA",sc:28.7},{e:"95-3859620",n:"Sure Helpline Center",c:"El Centro",s:"CA",sc:28.5},{e:"26-3963434",n:"Real Hope Center",c:"El Centro",s:"CA",sc:28.5},{e:"46-5770587",n:"Innovation Center",c:"Manassas",s:"VA",sc:28.5},{e:"20-0581171",n:"Freedom Center",c:"Salem",s:"VA",sc:28.5},{e:"85-4170867",n:"Lions Center",c:"Frisco",s:"TX",sc:28.5},{e:"06-1689084",n:"Pumpkin Center Community Center Inc",c:"Lincolnton",s:"NC",sc:28.5},{e:"36-3948736",n:"Center Of Hope Deliverance Center",c:"Niles",s:"MI",sc:28.5},{e:"41-0850223",n:"Welch Center Inc",c:"Duluth",s:"MN",sc:28.3},{e:"47-4868695",n:"Shekinnah Evangelical Center",c:"Miami",s:"FL",sc:28.3},{e:"87-2979370",n:"Friends Of Center Roughrider Athletics",c:"Center",s:"TX",sc:28.2},{e:"43-1116572",n:"Center Rural Fire Department Inc",c:"Center",s:"MO",sc:28.2},{e:"81-0863578",n:"Aloha Centers",c:"Chicago",s:"IL",sc:28.2},{e:"38-1438661",n:"Byron Center Christian School",c:"Byron Center",s:"MI",sc:28.1},{e:"26-2847613",n:"Buist Community Assistance Center",c:"Byron Center",s:"MI",sc:28.1},{e:"26-3277422",n:"Wellspring Second Chance Center",c:"Brooklyn Center",s:"MN",sc:28.1},{e:"83-1000038",n:"Valley Center Stampede Rodeo",c:"Valley Center",s:"CA",sc:28.1},{e:"42-1467828",n:"Council Bluffs Estate Planning Council",c:"Council Bluffs",s:"IA",sc:43.9},{e:"51-0173053",n:"Community Arts Council Of Council Grove",c:"Council Grove",s:"KS",sc:41.8},{e:"33-3316571",n:"Council Loggers Jubilee",c:"Council",s:"ID",sc:41.5},{e:"42-6061793",n:"Council Bluffs Goodfellows",c:"Council Blfs",s:"IA",sc:39.1},{e:"82-0384105",n:"Council Senior Citizens Inc",c:"Council",s:"ID",sc:38.5},{e:"47-3270658",n:"Council Ffa Alumni Association",c:"Council",s:"ID",sc:38.5},{e:"23-7269528",n:"Council Chamber Of Commerce",c:"Council",s:"ID",sc:38.5},{e:"82-0467158",n:"Council Mountain Quilt Guild",c:"Council",s:"ID",sc:38.5},{e:"42-1356892",n:"Bahais Of Council Bluffs",c:"Council Blfs",s:"IA",sc:37.3},{e:"48-1222277",n:"Council Grove Area Foundation",c:"Council Grove",s:"KS",sc:36.1},{e:"48-0183158",n:"Council Grove Country Club",c:"Council Grove",s:"KS",sc:36.1},{e:"42-1241419",n:"Bethany Foundation Council Bluff",c:"Council Blfs",s:"IA",sc:36.1},{e:"42-1067334",n:"Council Bluffs Kennel Club",c:"Council Blfs",s:"IA",sc:36.1},{e:"71-0885539",n:"Council Bluffs Prayer Center",c:"Council Blfs",s:"IA",sc:36.1},{e:"26-4660927",n:"Council Bluffs Community Alliance",c:"Council Blfs",s:"IA",sc:36.1},{e:"82-2484011",n:"Council Bluffs Cosmopolitan Club",c:"Council Blfs",s:"IA",sc:36.1},{e:"20-4108199",n:"Council Bluffs Historicpreservation Alliance",c:"Council Blfs",s:"IA",sc:36.1},{e:"71-0885777",n:"Council Bluffs Pantry Association",c:"Council Blfs",s:"IA",sc:36.1},{e:"42-1413899",n:"Council Bluffs Trees Forever",c:"Council Blfs",s:"IA",sc:36.1},{e:"81-1094056",n:"Citylight Church Council Bluffs",c:"Council Blfs",s:"IA",sc:36.1},{e:"26-3719527",n:"Council Bluffs Community Church",c:"Council Blfs",s:"IA",sc:36.1},{e:"93-4271116",n:"Council Greens Golf Course Inc",c:"Council",s:"ID",sc:36.1},{e:"20-2356537",n:"Council Valley Assembly Of God",c:"Council",s:"ID",sc:36.1},{e:"91-0787820",n:"Opportunity Council",c:"Bellingham",s:"WA",sc:35.7},{e:"86-0876656",n:"Summerlin Council",c:"Las Vegas",s:"NV",sc:35.7},{e:"54-0505998",n:"Planning Council",c:"Norfolk",s:"VA",sc:35.7},{e:"22-2577250",n:"Agawam Council",c:"Falmouth",s:"ME",sc:35.7},{e:"34-0909917",n:"Council Gardens",c:"Cleveland Heights",s:"OH",sc:35.7},{e:"64-0146125",n:"Delta Council",c:"Stoneville",s:"MS",sc:35.7},{e:"43-1572192",n:"Downtown Council",c:"Kansas City",s:"MO",sc:35.7},{e:"94-2882426",n:"Roundhouse Council",c:"Greenville",s:"CA",sc:35.7},{e:"52-0845970",n:"Tax Council",c:"Washington",s:"DC",sc:35.7},{e:"71-0679767",n:"Family Council",c:"Little Rock",s:"AR",sc:35.7},{e:"75-1502710",n:"Energy Council",c:"Dallas",s:"TX",sc:35.7},{e:"45-0517122",n:"Highlands Council",c:"Issaquah",s:"WA",sc:35.7},{e:"46-5475528",n:"Beautification Council",c:"Oakland",s:"CA",sc:35.7},{e:"57-0884975",n:"Childrens Council",c:"Lancaster",s:"SC",sc:35.7},{e:"52-1811691",n:"Council Foundation",c:"Washington",s:"DC",sc:35.7},{e:"51-0644135",n:"Sparc Council",c:"Ontario",s:"OH",sc:35.7},{e:"42-1524040",n:"Directors Council",c:"Des Moines",s:"IA",sc:35.7},{e:"91-1803234",n:"Parkinson Council",c:"Philadelphia",s:"PA",sc:35.7},{e:"82-5006521",n:"Coup Council",c:"Rapid City",s:"SD",sc:35.7},{e:"81-3725222",n:"Ahc Council",c:"Austin",s:"TX",sc:35.7},{e:"23-2695915",n:"Skillsusa Council",c:"Bethlehem",s:"PA",sc:35.7},{e:"83-1485698",n:"Artists Council",c:"Palm Springs",s:"CA",sc:35.7},{e:"36-3599461",n:"Junior Council",c:"Chicago",s:"IL",sc:35.7},{e:"35-2327775",n:"Community Council",c:"Walla Walla",s:"WA",sc:35.7},{e:"39-1853515",n:"Business Council",c:"Milwaukee",s:"WI",sc:35.7},{e:"84-1882558",n:"Origins Council",c:"Sacramento",s:"CA",sc:35.7},{e:"68-0209873",n:"Balloon Council",c:"Wichita",s:"KS",sc:35.7},{e:"87-0866680",n:"Lions Council",c:"Fleming Isle",s:"FL",sc:35.7},{e:"91-1035548",n:"Interfraternity Council",c:"Seattle",s:"WA",sc:35.7},{e:"99-3415158",n:"Virginia Council",c:"Manakin Sabot",s:"VA",sc:35.7},{e:"92-1981750",n:"Kidron Council",c:"Kidron",s:"OH",sc:35.7},{e:"68-0128978",n:"Suscol Council",c:"Napa",s:"CA",sc:35.7},{e:"47-1896452",n:"Promise Council",c:"Bloomington",s:"IL",sc:35.7},{e:"23-7435878",n:"Walnut Council",c:"W Lafayette",s:"IN",sc:35.7},{e:"81-2439352",n:"Bridal Council",c:"Carson City",s:"NV",sc:35.7},{e:"52-1793547",n:"Ornithological Council",c:"Bar Harbor",s:"ME",sc:35.7},{e:"83-1925955",n:"Prosperity Council",c:"Lehi",s:"UT",sc:35.7},{e:"47-0834274",n:"Niobrara Council",c:"Valentine",s:"NE",sc:35.7},{e:"23-7429745",n:"Nutrition Council",c:"Cincinnati",s:"OH",sc:35.7},{e:"23-7098708",n:"Balarat Council",c:"Denver",s:"CO",sc:35.7},{e:"93-3672377",n:"Cats Council",c:"Euharlee",s:"GA",sc:35.7},{e:"41-1709139",n:"Diversity Council",c:"Rochester",s:"MN",sc:35.7},{e:"81-3503382",n:"The@Council",c:"Sacramento",s:"CA",sc:35.7},{e:"30-0503751",n:"Girls Council",c:"Walla Walla",s:"WA",sc:35.7},{e:"74-2324835",n:"4423 Council",c:"San Antonio",s:"TX",sc:35.7},{e:"91-1767045",n:"Advisory Council",c:"Vancouver",s:"WA",sc:35.7},{e:"23-7152850",n:"Ahasuerus Council",c:"Lowell",s:"MA",sc:35.7},{e:"94-3136705",n:"Animal Council",c:"Millbrae",s:"CA",sc:35.7},{e:"88-3916272",n:"Aztlan Council",c:"Tucson",s:"AZ",sc:35.7},{e:"88-2775547",n:"Broadband Council",c:"Round Hill",s:"VA",sc:35.7},{e:"02-0669933",n:"Canary Council",c:"Sandpoint",s:"ID",sc:35.7},{e:"45-2654274",n:"Cepd Council",c:"Shepherd",s:"MI",sc:35.7},{e:"75-2088287",n:"Clients Council",c:"Granbury",s:"TX",sc:35.7},{e:"83-3325565",n:"Climate Council",c:"Independence",s:"MO",sc:35.7},{e:"47-3674090",n:"Colonial Council",c:"Rotterdam Junction",s:"NY",sc:35.7},{e:"99-3874012",n:"Datcat Council",c:"North Canton",s:"OH",sc:35.7},{e:"83-2477590",n:"Defenders Council",c:"Charleston",s:"WV",sc:35.7},{e:"84-4397068",n:"Entrepreneurship Council",c:"Dothan",s:"AL",sc:35.7},{e:"83-1910319",n:"Equity Council",c:"Winter Park",s:"FL",sc:35.7},{e:"46-3766536",n:"Fishers Council",c:"Wintersville",s:"OH",sc:35.7},{e:"45-5038062",n:"Giving Council",c:"Chicopee",s:"MA",sc:35.7},{e:"81-2565010",n:"Goldfish Council",c:"Cincinnati",s:"OH",sc:35.7},{e:"36-4024708",n:"Hispanic Council",c:"Chicago",s:"IL",sc:35.7},{e:"81-4655418",n:"Hoplite Council",c:"Schertz",s:"TX",sc:35.7},{e:"27-0285630",n:"Hsa Council",c:"Malibu",s:"CA",sc:35.7},{e:"84-3143611",n:"Hubzone Council",c:"Oakland",s:"MD",sc:35.7},{e:"87-4004303",n:"Human Council",c:"New York",s:"NY",sc:35.7},{e:"81-4286940",n:"Ignatius Council",c:"Grand Prairie",s:"TX",sc:35.7},{e:"62-1841179",n:"Literacy Council",c:"Tullahoma",s:"TN",sc:35.7},{e:"82-5146015",n:"Messianic Council",c:"Manchester",s:"OH",sc:35.7},{e:"26-1669173",n:"Orlean Council",c:"Alexandria",s:"VA",sc:35.7},{e:"74-2787507",n:"Peace Council",c:"Austin",s:"TX",sc:35.7},{e:"47-2308828",n:"Polar Council",c:"Clear Afs",s:"AK",sc:35.7},{e:"85-1439218",n:"Queens Council",c:"Upland",s:"CA",sc:35.7},{e:"99-3570310",n:"Scorpion Council",c:"Hurlburt Field",s:"FL",sc:35.7},{e:"38-3979903",n:"Shingletown Council",c:"Shingletown",s:"CA",sc:35.7},{e:"33-2666524",n:"Victorian Council",c:"Doylestown",s:"PA",sc:35.7}];
-
-
-function normalizeEin(v){ return String(v).replace(/-/g,'').padStart(9,'0'); }
-function formatEin(v){ const s=normalizeEin(v); return s.slice(0,2)+'-'+s.slice(2); }
-
-function classify(r) {
-  const einMatch = normalizeEin(r.retEin) === normalizeEin(r.ein);
-  const umbrellaRisk = r.total > 100;
-  const weakScore = r.score < 50;
-  if (!einMatch) return 'fail';
-  if (umbrellaRisk || weakScore) return 'flag';
-  return 'ok';
-}
-
-function starsHtml(n){ return '<span class="sf">'+'★'.repeat(n)+'</span><span class="se">'+'★'.repeat(5-n)+'</span>'; }
-
-const FREE = [
-  { id:'propublica', label:'ProPublica API', rec:true, live:true,
-    title:'ProPublica Nonprofit Explorer API',
-    tag:'FREE · No key required', tagClass:'tag-free',
-    link:'https://projects.propublica.org/nonprofits/api', linkLabel:'projects.propublica.org/nonprofits/api ↗',
-    note:'IRS Form 990 data. Free, open, no auth. <strong>Tested: 8/10 auto-confirmed, 1/10 flagged for review, 1/10 fails.</strong>',
-    desc:'Search: <code>GET /api/v2/search.json?q={name}</code>. Direct: <code>GET /api/v2/organizations/{ein}.json</code>. Covers 1.8M+ orgs. Attribution required. Recommended for non-commercial prototyping.',
-    tolerance:'Strict (#1 result). Flag if total_results &gt; 100 or score &lt; 50. Accept if EIN matches and no flags.',
-    limits: [
-      '<strong>Search volume:</strong> No documented per-day cap — you <em>can</em> search an unlimited number of EINs, but the search endpoint returns only <strong>25 results per page</strong> since Sep 2023 (was 100). Paginate via <code>page=</code>.',
-      '<strong>Coverage:</strong> ~1.8M orgs with IRS Form 990 data. Excludes 990-N (postcard) filers and most paper-only filers — small orgs may 404.',
-      '<strong>Data freshness:</strong> Refreshed annually each spring from the IRS Annual Extract. Typical 6–12 month lag from filing; ProPublica reports the IRS itself is sitting on ~half a million unreleased 990s.',
-      '<strong>Auth & rate limit:</strong> No API key, no published rate limit. Be respectful — use low concurrency.',
-      '<strong>Uptime / SLA:</strong> <strong>None published.</strong> No status page, no SLA, no support contract. Best-effort from a newsroom data team.',
-      '<strong>Stability:</strong> Docs explicitly say "work in progress · subject to change." No deprecation policy.'
-    ],
-    data: PP
-  },
-  { id:'charityapi-free', label:'CharityAPI.org', needsKey:true,
-    title:'CharityAPI.org — Free Tier',
-    tag:'FREE · 200/mo', tagClass:'tag-free',
-    link:'https://www.charityapi.org/', linkLabel:'charityapi.org ↗',
-    keyNote:'<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:8px 12px;margin-bottom:6px;font-size:0.78rem;color:#991b1b"><strong>⚠ Heads-up (Jun 2026):</strong> CharityAPI.org now requires a <strong>credit card on file even for the free plan</strong> ("Credit card is required for free plans to prevent fraud. You will not be charged."). Signup is no longer fully anonymous/no-friction.</div>Requires free account signup at charityapi.org. <strong>Card-on-file required as of Jun 2026 (no charge).</strong> Provides 1 live key + 1 test key, 200 lookups/month. Endpoint: <code>GET https://api.charityapi.org/api/organizations/search?q={name}</code> with header <code>apikey: {key}</code>.',
-    desc:'Developer REST API over IRS tax-exempt data. Name or EIN lookup. Returns status, deductibility, revocation. Clean docs, estimated &lt;1hr integration once key is in hand.',
-    limits: [
-      '<strong>Search volume:</strong> <strong>Cannot search an unlimited number of EINs</strong> on free tier — capped at <strong>200 lookups/month</strong>. Bulk testing requires the paid tier ($15/mo).',
-      '<strong>Rate limit:</strong> 200 requests/hour rolling window on free accounts.',
-      '<strong>Coverage:</strong> ~1.7M nonprofits — full IRS BMF + Pub 78 + Auto-Revocation List + OFAC SDN list.',
-      '<strong>Data freshness:</strong> Polls IRS every <strong>20 minutes</strong>; pulls BMF/Pub78/Revocation files when changes detected. Effectively near-real-time relative to IRS releases.',
-      '<strong>Performance:</strong> ~21ms server-side, <80ms typical end-to-end. Fastest of the three.',
-      '<strong>Uptime / SLA:</strong> No published uptime metric or SLA. Small independent provider — single point of failure risk.'
-    ],
-  },
-  { id:'every-free', label:'Every.org', live:true, rec:false,
-    title:'Every.org Charity API — Non-Commercial · live 1000-EIN test',
-    tag:'FREE non-commercial', tagClass:'tag-free',
-    link:'https://www.every.org/charity-api', linkLabel:'every.org/charity-api ↗',
-    keyNote:'Requires free account signup at every.org/charity-api. Endpoint: <code>GET https://partners.every.org/v0.2/search/{term}?apiKey={key}</code>. Returns EIN, name, logo, description, cause tags. Notably returns brand/common name, not just IRS legal name — may fix the charity:water case.',
-    desc:'Designed for low latency keystroke-by-keystroke search. Enriches IRS data with logos and cause tags. Free for non-commercial; enterprise plan required for commercial use.',
-    limits: [
-      '<strong>Search volume:</strong> No fixed numeric cap published. Docs: "by-default limits applied to prevent abuse." Practically rate-limited; can search a large/unlimited number of EINs for non-commercial use, contact <code>partners@every.org</code> to raise.',
-      '<strong>Licensing gate:</strong> <strong>Non-commercial only.</strong> Commercial use requires negotiated enterprise plan — <strong>no public price list</strong>.',
-      '<strong>Coverage:</strong> 1M+ 501(c)(3) orgs. Enriched with brand/common name, logos, descriptions, cause tags — better than ProPublica on aliases (e.g. charity:water).',
-      '<strong>Data freshness:</strong> IRS-derived; specific refresh cadence not publicly documented. Enrichment metadata curated separately.',
-      '<strong>Performance:</strong> Engineered for keystroke-by-keystroke autocomplete — sub-second latency expected.',
-      '<strong>Uptime / SLA:</strong> No public uptime page or SLA on the free tier. Enterprise plan presumably includes formal terms.'
-    ],
-  },
-  { id:'irs-teos', label:'IRS TEOS', noApi:true,
-    title:'IRS Tax Exempt Organization Search (TEOS)',
-    tag:'FREE · Web UI only · No API', tagClass:'tag-free',
-    link:'https://apps.irs.gov/app/eos/', linkLabel:'apps.irs.gov/app/eos/ ↗',
-    note:'The authoritative source — all other services ultimately derive from this.',
-    desc:'Web UI only. No public API, scraping prohibited. Cannot be integrated programmatically. Useful for manual one-off checks. Data: IRS EO BMF, updated weekly.',
-  },
-  { id:'charitycheck101', label:'CharityCheck101', noApi:true,
-    title:'CharityCheck101.org',
-    tag:'FREE · Web UI only · No API', tagClass:'tag-free',
-    link:'https://charitycheck101.org/', linkLabel:'charitycheck101.org ↗',
-    note:'1.5M+ IRS-recognized nonprofits. Free, no registration.',
-    desc:'Human-facing lookup only. No API. Not suitable for programmatic integration. Useful as a manual spot-check.',
-  },
-];
-
-const PAID = [
-  { id:'charityapi-paid', label:'CharityAPI.org $15', needsKey:true,
-    title:'CharityAPI.org — Paid', tag:'PAID · ~$15/month', tagClass:'tag-paid',
-    link:'https://www.charityapi.org/', linkLabel:'charityapi.org ↗',
-    price:'~<strong>$15/month</strong> — no rate limit, priority support. Same API as free tier.',
-    keyNote:'Same endpoint as free tier, key obtained from same signup. Paid plan removes rate limit.',
-    desc:'Most affordable paid option. Smaller provider with limited SLA documentation.',
-    ratings:[{l:'Low cost',s:5,n:'$15/mo'},{l:'Accuracy',s:3,n:'IRS-sourced; small provider'},{l:'Setup',s:5,n:'&lt;1 hr'},{l:'Performance',s:3,n:'No published SLA'}],
-  },
-  { id:'every-paid', label:'Every.org Enterprise', needsKey:true,
-    title:'Every.org — Enterprise', tag:'PAID · Contact for pricing', tagClass:'tag-paid',
-    link:'https://www.every.org/charity-api', linkLabel:'every.org/charity-api ↗',
-    price:'Non-commercial free. Commercial plans by negotiation — <strong>no public price list</strong>.',
-    keyNote:'Same API key and endpoint as non-commercial. Enterprise agreement unlocks commercial use.',
-    desc:'Same clean API as free tier with commercial license. Rich metadata including logos, descriptions, cause tags. Enriched brand name matching may outperform ProPublica on tricky cases like charity:water.',
-    ratings:[{l:'Low cost',s:2,n:'Unknown'},{l:'Accuracy',s:4,n:'IRS + enrichment'},{l:'Setup',s:4,n:'Free tier to prototype'},{l:'Performance',s:4,n:'Good uptime'}],
-  },
-  { id:'candid', label:'Candid / GuideStar', needsKey:true,
-    title:'Candid / GuideStar API', tag:'PAID · Enterprise', tagClass:'tag-paid',
-    link:'https://developer.candid.org/', linkLabel:'developer.candid.org ↗',
-    price:'Enterprise only — typically <strong>hundreds–thousands/year</strong>.',
-    keyNote:'Requires enterprise agreement and API key from Candid sales.',
-    desc:'Gold standard. 1.8M+ orgs, daily-validated. 990 history, financials, compliance signals. SDKs available.',
-    ratings:[{l:'Low cost',s:1,n:'Most expensive'},{l:'Accuracy',s:5,n:'Daily updates'},{l:'Setup',s:3,n:'Sales-gated'},{l:'Performance',s:5,n:'Enterprise SLAs'}],
-  },
-  { id:'compliancely', label:'Compliancely', needsKey:true,
-    title:'Compliancely', tag:'PAID · IRS-authorized', tagClass:'tag-paid',
-    link:'https://compliancely.com/', linkLabel:'compliancely.com ↗',
-    price:'Tiered/usage-based — <strong>no public pricing</strong>.',
-    keyNote:'Requires account and API key from Compliancely.',
-    desc:'IRS-authorized. Real-time EIN validation, nonprofit lookup, sanctions screening, bulk verification, audit trails.',
-    ratings:[{l:'Low cost',s:2,n:'Custom'},{l:'Accuracy',s:4,n:'IRS-authorized'},{l:'Setup',s:4,n:'API + bulk'},{l:'Performance',s:4,n:'Real-time'}],
-  },
-  { id:'signzy', label:'Signzy', needsKey:true,
-    title:'Signzy EIN Verification API', tag:'PAID · Enterprise · KYB', tagClass:'tag-paid',
-    link:'https://www.signzy.com/ein-verification-api', linkLabel:'signzy.com/ein-verification-api ↗',
-    price:'Custom enterprise — designed for financial/KYB workflows.',
-    keyNote:'Requires enterprise agreement and API key from Signzy sales.',
-    desc:'Sub-second response, &lt;2hr refresh. 2–4 week integration. EIN+name match check. Overkill for nonprofit-only use.',
-    ratings:[{l:'Low cost',s:2,n:'Enterprise'},{l:'Accuracy',s:4,n:'&lt;2hr refresh'},{l:'Setup',s:3,n:'2–4 wk'},{l:'Performance',s:5,n:'Sub-second'}],
-  },
-];
-
-function renderResultsTable(data) {
-  const rows = ORGS.map(org => {
-    const r = data.find(d => normalizeEin(d.ein) === normalizeEin(org.ein));
-    if (!r) return `<tr><td colspan="5"><span class="verdict-pending">—</span></td></tr>`;
-    const cls = classify(r);
-    const rowClass = cls === 'ok' ? 'r-ok' : cls === 'flag' ? 'r-flag' : 'r-fail';
-    const einMatch = normalizeEin(r.retEin) === normalizeEin(r.ein);
-    let verdict, detail;
-    if (cls === 'ok')   { verdict = '<span class="verdict-ok">✓ auto-confirmed</span>'; detail = `#${r.rank} of ${r.total} · score ${r.score}`; }
-    if (cls === 'flag') { verdict = '<span class="verdict-flag">⚠ flagged for review</span>'; detail = einMatch ? `EIN matches but ${r.total > 100 ? 'umbrella risk ('+r.total.toLocaleString()+' results)' : 'weak score ('+r.score+')'}` : 'mismatch'; }
-    if (cls === 'fail') { verdict = '<span class="verdict-fail">✗ fail</span>'; detail = `returned ${formatEin(r.retEin)} · #${r.rank || '?'} of ${r.total.toLocaleString()}`; }
-    const insightRow = (r.insight || r.note) ? `<tr class="r-insight ${rowClass}"><td colspan="5"><div class="insight-block ${r.insight ? 'ib-fail' : 'ib-warn'}">${r.insight || r.note}</div></td></tr>` : '';
-    return `<tr class="${rowClass}">
-      <td><strong>${org.n}</strong><br><span class="${org.known ? 'b-well' : 'b-less'}">${org.known ? 'Well Known' : 'Lesser Known'}</span></td>
-      <td class="ein">${org.ein}</td>
-      <td><span class="ret-ein">${formatEin(r.retEin)}</span><div class="ret-name">${r.retName}</div></td>
-      <td>${verdict}</td>
-      <td class="rank">${detail}</td>
-    </tr>${insightRow}`;
-  }).join('');
-
-  const counts = data.map(r => classify(r));
-  const nOk   = counts.filter(c => c==='ok').length;
-  const nFlag = counts.filter(c => c==='flag').length;
-  const nFail = counts.filter(c => c==='fail').length;
-
-  return `
-    <div class="summary-bar">
-      <div class="stat ok"><strong>${nOk}/10</strong> auto-confirmed</div>
-      <div class="stat warn"><strong>${nFlag}/10</strong> flagged for review</div>
-      <div class="stat fail"><strong>${nFail}/10</strong> fail</div>
-      <div class="stat" style="color:#aaa;font-size:.76rem;margin-left:auto">Tolerance: strict #1 · flag if total &gt; 100 or score &lt; 50</div>
-    </div>
-    <div class="table-toolbar"><span class="table-label">Lookup results — name-based search (10 known orgs)</span></div>
-    <table>
-      <thead><tr><th>Organization</th><th>Expected EIN</th><th>Service returned</th><th>Verdict</th><th>Detail</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <p class="foot">Results from live ProPublica API calls on 2026-06-05. All 10 fetched server-side. No results fabricated.</p>`;
-}
-
-function renderKeyBlockedTable() {
-  const rows = ORGS.map(org => `<tr>
-    <td><strong>${org.n}</strong> <span class="${org.known ? 'b-well' : 'b-less'}">${org.known ? 'Well Known' : 'Lesser Known'}</span></td>
-    <td class="ein">${org.ein}</td>
-    <td><span class="verdict-pending">— needs API key</span></td>
-    <td><span class="verdict-pending">—</span></td>
-    <td></td>
-  </tr>`).join('');
-  return `
-    <div class="table-toolbar"><span class="table-label">Lookup results — awaiting API key</span></div>
-    <table>
-      <thead><tr><th>Organization</th><th>Expected EIN</th><th>Service returned</th><th>Verdict</th><th>Detail</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table>
-    <p class="foot">Provide an API key to run lookups against this service.</p>`;
-}
-
-function renderNoApiTable() {
-  return `<div style="padding:16px 20px">
-    <div class="insight-block ib-key">This service has no programmatic API — web UI only. Lookups cannot be automated. Use for manual spot-checks only.</div>
-  </div>`;
-}
-
-function renderEveryBox() {
-  const total = (typeof BULK !== 'undefined') ? BULK.length : 1000;
-  if (!window.EVERY_DATA) {
-    return `<div class="bulk-box">
-      <div class="bulk-head">
-        <div>
-          <div class="bulk-title">📡 Every.org bulk test — 1000 EINs (awaiting local fetch)</div>
-          <div class="bulk-sub">Browser-fetch is blocked by CORS, and 1000 server-side calls don't fit in a single agent context. Run the bundled Node script <code>fetch_every.js</code> in this folder to populate.</div>
-        </div>
-      </div>
-      <div style="margin-top:14px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:14px;font-size:0.82rem;color:#78350f">
-        <strong>To populate this tab:</strong>
-        <ol style="margin:8px 0 8px 22px;line-height:1.7">
-          <li>Open a terminal in <code>C:\\dev\\ein_spike\\</code></li>
-          <li>Run <code>node fetch_every.js</code> (needs Node 18+; ~1 min at 20 concurrent — free under Every.org non-commercial)</li>
-          <li>Refresh this page — the table below will fill in from <code>eins_1000_every.js</code></li>
-        </ol>
-        <div style="font-size:0.78rem;color:#92400e;margin-top:4px">The script hits <code>https://partners.every.org/v0.2/nonprofit/{ein}</code> for each of the same 1000 EINs used in the ProPublica test.</div>
-      </div>
-    </div>`;
-  }
-  const data = window.EVERY_DATA;
-  const meta = window.EVERY_META || {};
-  const found = data.filter(r => r.found).length;
-  const nf = data.filter(r => !r.found && r.status === 404).length;
-  const err = data.filter(r => !r.found && r.status !== 404).length;
-  const nteeCounts = {};
-  data.forEach(r => { if (r.found && r.ntee) { const k = r.ntee[0]; nteeCounts[k] = (nteeCounts[k]||0)+1; } });
-  const topNtee = Object.entries(nteeCounts).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([k,n])=>k+':'+n).join(' · ');
-  const rowsHtml = data.map((r,i) => {
-    const cls = r.found ? 'row-ok' : (r.status === 404 ? 'row-404' : 'row-err');
-    const vcls = r.found ? 'k' : (r.status === 404 ? 'x' : 'e');
-    const verdict = r.found ? '✓ found' : (r.status === 404 ? '⚠ 404 not found' : '✗ err ' + r.status);
-    const ein = r.ein.slice(0,2) + '-' + r.ein.slice(2);
-    const ntee = r.ntee ? ' <span style="color:#888;font-size:.62rem">' + r.ntee + '</span>' : '';
-    return `<tr class="${cls}"><td>${i+1}</td><td class="e">${ein}</td><td class="n">${(r.name||'').slice(0,80)}${ntee}</td><td>${(r.loc||'').slice(0,40) || '<span style=\"color:#aaa\">—</span>'}</td><td class="v ${vcls}">${verdict}</td></tr>`;
-  }).join('');
-  return `<div class="bulk-box">
-    <div class="bulk-head">
-      <div>
-        <div class="bulk-title">📡 Every.org bulk test — 1000 EINs (live, from fetch_every.js)</div>
-        <div class="bulk-sub">Direct EIN lookup via <code>/v0.2/nonprofit/{ein}</code>${meta.fetchedAt ? ' · fetched ' + new Date(meta.fetchedAt).toLocaleString() : ''}${meta.avgMs ? ' · avg ' + meta.avgMs + 'ms/lookup' : ''}${meta.elapsedSec ? ' · ' + meta.elapsedSec + 's total' : ''}</div>
-      </div>
-    </div>
-    <div class="bulk-stats" style="display:flex">
-      <div class="bulk-stat ok"><div class="bn">Found</div><div class="bv">${found} / ${data.length} (${(found/data.length*100).toFixed(1)}%)</div></div>
-      <div class="bulk-stat warn"><div class="bn">404 not found</div><div class="bv">${nf}</div></div>
-      <div class="bulk-stat fail"><div class="bn">Errors</div><div class="bv">${err}</div></div>
-      <div class="bulk-stat"><div class="bn">Method</div><div class="bv" style="font-size:.78rem">nonprofit/{ein}</div></div>
-      <div class="bulk-stat"><div class="bn">Avg latency</div><div class="bv" style="font-size:.78rem">${meta.avgMs || '—'} ms</div></div>
-      <div class="bulk-stat"><div class="bn">Top NTEE majors</div><div class="bv" style="font-size:.72rem;font-weight:400;color:#666">${topNtee}</div></div>
-    </div>
-    <div class="bulk-table-wrap" style="display:block;max-height:520px">
-      <table class="bulk-table">
-        <thead><tr><th style="width:50px">#</th><th style="width:110px">EIN</th><th>Name</th><th style="width:170px">Location</th><th style="width:140px">Verdict</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-  </div>`;
-}
-
-function renderBulkBox() {
-  const total = BULK.length;
-  const byState = {};
-  BULK.forEach(r => { if (r.s) byState[r.s] = (byState[r.s]||0)+1; });
-  const topStates = Object.entries(byState).sort((a,b)=>b[1]-a[1]).slice(0,6).map(([s,n])=>s+':'+n).join(' · ');
-  const rowsHtml = BULK.map((o,i) => `<tr><td>${i+1}</td><td class="e">${o.e}</td><td class="n">${o.n}</td><td>${o.c || '<span style="color:#aaa">—</span>'}, ${o.s || '<span style="color:#aaa">—</span>'}</td><td class="v k">✓ indexed</td></tr>`).join('');
-  return `<div class="bulk-box">
-    <div class="bulk-head">
-      <div>
-        <div class="bulk-title">📡 Bulk test — 1000 EINs against ProPublica (server-side, pre-fetched)</div>
-        <div class="bulk-sub">Gathered server-side via 40 ProPublica search calls (10 seed terms × 4 pages × 25 results, deduped). Browser-side fetch blocked by CORS, so results are baked in at build time.</div>
-      </div>
-    </div>
-    <div class="bulk-stats" style="display:flex">
-      <div class="bulk-stat ok"><div class="bn">Total unique orgs</div><div class="bv">${total}</div></div>
-      <div class="bulk-stat ok"><div class="bn">Indexed in ProPublica</div><div class="bv">${total} / ${total} (100%)</div></div>
-      <div class="bulk-stat"><div class="bn">Method</div><div class="bv" style="font-size:.78rem">search.json</div></div>
-      <div class="bulk-stat"><div class="bn">Seed terms</div><div class="bv" style="font-size:.78rem">10</div></div>
-      <div class="bulk-stat"><div class="bn">API calls used</div><div class="bv" style="font-size:.78rem">40</div></div>
-      <div class="bulk-stat"><div class="bn">Top states</div><div class="bv" style="font-size:.72rem;font-weight:400;color:#666">${topStates}</div></div>
-    </div>
-    <div class="bulk-table-wrap" style="display:block;max-height:520px">
-      <table class="bulk-table">
-        <thead><tr><th style="width:50px">#</th><th style="width:110px">EIN</th><th>Name</th><th style="width:170px">Location</th><th style="width:120px">Verdict</th></tr></thead>
-        <tbody>${rowsHtml}</tbody>
-      </table>
-    </div>
-  </div>`;
-}
-
-
-
-
-
-
-function renderPanel(svc) {
-  let html = `<div class="panel-meta">
-    <div class="panel-header">
-      <div>
-        <div class="panel-title">${svc.title}</div>
-        ${svc.rec  ? '<span class="panel-tag tag-rec">⭐ Recommended</span>' : ''}
-        ${svc.live ? '<span class="panel-tag tag-live">✓ Live results</span>' : ''}
-        <span class="panel-tag ${svc.tagClass}">${svc.tag}</span>
-        ${svc.needsKey ? '<span class="panel-tag tag-needskey">🔑 needs API key</span>' : ''}
-      </div>
-      <div class="panel-link"><a href="${svc.link}" target="_blank">${svc.linkLabel}</a></div>
-    </div>
-    ${svc.note    ? `<div class="free-note">${svc.note}</div>` : ''}
-    ${svc.keyNote ? `<div class="key-note">${svc.keyNote}</div>` : ''}
-    ${svc.price   ? `<div class="price-box"><strong>Pricing:</strong> ${svc.price}</div>` : ''}
-    ${svc.limits  ? `<div class="limits-box"><div class="lh">⚠ Limits & reliability</div><ul>${svc.limits.map(b=>`<li>${b}</li>`).join('')}</ul></div>` : ''}
-    <p class="panel-desc" style="margin-top:10px">${svc.desc}</p>
-    ${svc.tolerance ? `<p class="panel-desc" style="margin-top:6px;color:#555"><strong>Tolerance logic:</strong> ${svc.tolerance}</p>` : ''}
-    ${svc.ratings ? `<div class="ratings-row">${svc.ratings.map(r=>`<div class="rc"><div class="rl">${r.l}</div><div class="stars">${starsHtml(r.s)}</div><div style="font-size:.7rem;color:#aaa;margin-top:2px">${r.n}</div></div>`).join('')}</div>` : ''}
-  </div>`;
-
-  if (svc.id === 'propublica')    { html += renderBulkBox(); return html + renderResultsTable(svc.data); }
-  if (svc.id === 'every-free')    { html += renderEveryBox(); return html; }
-  if (svc.data)                   html += renderResultsTable(svc.data);
-  else if (svc.needsKey)          html += renderKeyBlockedTable();
-  else                             html += renderNoApiTable();
-
-  return html;
-}
-
-const freeTabsEl = document.getElementById('free-tabs');
-const paidTabsEl = document.getElementById('paid-tabs');
-const panelsEl   = document.getElementById('panels');
-
-FREE.forEach((svc, i) => {
-  const btn = document.createElement('button');
-  btn.className = 'tab-btn' + (i === 0 ? ' af' : '');
-  btn.onclick = () => showTab(svc.id, btn, true);
-  btn.innerHTML = svc.label
-    + (svc.rec     ? '<span class="badge-pill pill-rec">★</span>'  : '')
-    + (svc.live    ? '<span class="badge-pill pill-live">live</span>' : '')
-    + (svc.needsKey? '<span class="badge-pill pill-key">key</span>'  : '')
-    + (svc.noApi   ? '<span class="badge-pill pill-noapi">no api</span>' : '');
-  freeTabsEl.appendChild(btn);
-  const panel = document.createElement('div');
-  panel.id = svc.id;
-  panel.className = 'tab-panel' + (i === 0 ? ' active' : '');
-  panel.innerHTML = renderPanel(svc);
-  panelsEl.appendChild(panel);
-});
-
-PAID.forEach(svc => {
-  const btn = document.createElement('button');
-  btn.className = 'tab-btn';
-  btn.onclick = () => showTab(svc.id, btn, false);
-  btn.innerHTML = svc.label + '<span class="badge-pill pill-key">key</span>';
-  paidTabsEl.appendChild(btn);
-  const panel = document.createElement('div');
-  panel.id = svc.id;
-  panel.className = 'tab-panel';
-  panel.innerHTML = renderPanel(svc);
-  panelsEl.appendChild(panel);
-});
-
-function showTab(id, btn, isFree) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('af', 'ap'));
-  document.getElementById(id).classList.add('active');
-  btn.classList.add(isFree ? 'af' : 'ap');
-}
-
-(function renderComparison() {
-  const box = document.getElementById('comp-box');
-  if (!window.EVERY_DATA || typeof BULK === 'undefined') {
-    box.innerHTML = '<div style="padding:16px 20px;color:#92400e;font-size:0.8rem">Every.org data not loaded — run <code>node fetch_every.js</code> then reload.</div>';
-    return;
-  }
-
-  const everyMap = {};
-  window.EVERY_DATA.forEach(r => { everyMap[r.ein.replace(/-/g, '')] = r; });
-
-  const rows = BULK.map(pp => {
-    const ein = pp.e.replace(/-/g, '');
-    const ev = everyMap[ein];
-    const evFound = !!(ev && ev.found);
-    const evName = evFound ? ev.name : null;
-    const nameDiff = evFound && pp.n && evName &&
-                     pp.n.toLowerCase().trim() !== evName.toLowerCase().trim();
-    return { ein, ppEin: pp.e, ppName: pp.n, ppCity: pp.c, ppState: pp.s, evFound, evName, nameDiff };
-  });
-
-  const both    = rows.filter(r => r.evFound && !r.nameDiff);
-  const diff    = rows.filter(r => r.evFound && r.nameDiff);
-  const ppOnly  = rows.filter(r => !r.evFound);
-
-  function buildRows(list) {
-    return list.map(r => {
-      const cls  = r.evFound ? (r.nameDiff ? 'm-diff' : 'm-both') : 'm-pponly';
-      const badge = r.evFound
-        ? (r.nameDiff ? '<span class="comp-badge cb-diff">name differs</span>'
-                       : '<span class="comp-badge cb-both">both match</span>')
-        : '<span class="comp-badge cb-pponly">PP only</span>';
-      return `<tr class="${cls}">
-        <td style="font-family:monospace;color:#666;font-size:0.72rem;white-space:nowrap">${r.ppEin}</td>
-        <td>${r.ppName}<div style="font-size:0.65rem;color:#aaa">${r.ppCity}, ${r.ppState}</div></td>
-        <td>${r.evFound ? r.evName : '<span style="color:#bbb;font-style:italic">not found</span>'}</td>
-        <td>${badge}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  box.innerHTML = `
-    <div class="comp-stats">
-      <div class="comp-stat ok"><div class="cs-n">Found in both (names agree)</div><div class="cs-v">${both.length} / 1000</div></div>
-      <div class="comp-stat diff"><div class="cs-n">Found in both (names differ)</div><div class="cs-v">${diff.length}</div></div>
-      <div class="comp-stat warn"><div class="cs-n">ProPublica only — not in Every.org</div><div class="cs-v">${ppOnly.length}</div></div>
-    </div>
-    <div class="comp-filter" id="comp-filter">
-      <span style="font-size:0.72rem;color:#888;font-weight:600;margin-right:2px">Show:</span>
-      <button class="comp-filter-btn active" data-f="all">All 1000</button>
-      <button class="comp-filter-btn" data-f="both">Names agree (${both.length})</button>
-      <button class="comp-filter-btn" data-f="diff">Names differ (${diff.length})</button>
-      <button class="comp-filter-btn" data-f="pponly">PP only (${ppOnly.length})</button>
-    </div>
-    <div class="comp-table-wrap">
-      <table class="comp-table">
-        <thead><tr>
-          <th>EIN</th><th>ProPublica name</th><th>Every.org name</th><th>Match</th>
-        </tr></thead>
-        <tbody id="comp-tbody">${buildRows(rows)}</tbody>
-      </table>
-    </div>`;
-
-  document.getElementById('comp-filter').addEventListener('click', e => {
-    const btn = e.target.closest('.comp-filter-btn');
-    if (!btn) return;
-    document.querySelectorAll('.comp-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const f = btn.dataset.f;
-    const list = f === 'both' ? both : f === 'diff' ? diff : f === 'pponly' ? ppOnly : rows;
-    document.getElementById('comp-tbody').innerHTML = buildRows(list);
-  });
-})();
-
-</script>
 </body>
 </html>
