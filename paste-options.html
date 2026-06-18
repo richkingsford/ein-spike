@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Paste to Add Options — Prototype</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #0891b2;
+    --accent-bg: #e0f7fa;
+    --flash: #d1fae5;
+    --flash-ink: #059669;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+  header {
+    background: #fff; border-bottom: 1px solid var(--line);
+    padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+    position: sticky; top: 0; z-index: 10;
+  }
+  header h1 { font-size: 15px; margin: 0; flex: 1; }
+  .tag { font-size: 11px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; }
+  header a { font-size: 13px; color: var(--muted); text-decoration: none; }
+  header a:hover { color: var(--ink); }
+
+  .page {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 22px 20px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Pane label ────────────────────────────────────────────── */
+  .pane-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted);
+    display: flex; align-items: center; gap: 7px; margin-bottom: 14px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* ── Question config ───────────────────────────────────────── */
+  .q-config {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap;
+  }
+  .q-config input[type=text] {
+    flex: 1; min-width: 260px;
+    padding: 8px 11px; border: 1px solid var(--line); border-radius: 6px;
+    font: inherit; font-size: 14px; font-weight: 500; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .q-config input[type=text]:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(8,145,178,.12);
+  }
+  .type-toggle { display: flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+  .type-toggle button {
+    padding: 7px 13px; font: inherit; font-size: 12px; font-weight: 500;
+    border: none; background: #fff; cursor: pointer; color: var(--muted);
+    transition: background .15s, color .15s;
+  }
+  .type-toggle button.active { background: var(--accent-bg); color: var(--accent); }
+  .type-toggle button + button { border-left: 1px solid var(--line); }
+
+  /* ── Sample lists ──────────────────────────────────────────── */
+  .section-label {
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em;
+    margin-bottom: 10px;
+  }
+  .sample-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .sample-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
+  }
+  .sample-card-title {
+    font-size: 13px; font-weight: 600; margin-bottom: 2px;
+  }
+  .sample-card-count {
+    font-size: 11px; color: var(--muted); margin-bottom: 10px;
+  }
+  .sample-items {
+    flex: 1;
+    font-size: 12px; color: #374151; line-height: 1.7;
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+    margin-bottom: 12px;
+  }
+  .sample-items li { list-style: none; padding: 0; }
+  .sample-items li::before { content: "·  "; color: var(--muted); }
+  .copy-hint {
+    font-size: 11px; color: var(--muted); font-style: italic;
+    border-top: 1px solid var(--line); padding-top: 8px; margin-top: 2px;
+  }
+
+  /* ── Paste zone ────────────────────────────────────────────── */
+  .paste-zone {
+    border: 1.5px dashed #d1d5db; border-radius: 10px;
+    padding: 13px 15px; background: #fff;
+    transition: border-color .2s, background .2s;
+  }
+  .paste-zone:focus-within { border-color: var(--accent); }
+  .paste-zone-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin-bottom: 6px;
+  }
+  .paste-zone textarea {
+    width: 100%; border: none; background: transparent; resize: none;
+    font: inherit; font-size: 13px; color: var(--ink); outline: none; min-height: 72px;
+  }
+  .paste-zone-foot {
+    display: flex; align-items: center; justify-content: space-between; margin-top: 6px;
+  }
+  .paste-hint { font-size: 11px; color: #9ca3af; }
+  .add-btn {
+    padding: 6px 14px; background: var(--accent); color: #fff;
+    border: none; border-radius: 6px; font: inherit; font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: filter .15s;
+  }
+  .add-btn:hover { filter: brightness(1.08); }
+
+  /* ── Chips ─────────────────────────────────────────────────── */
+  .chips-header {
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 12px; color: var(--muted); margin-bottom: 10px;
+  }
+  .chips-header .count { font-weight: 600; color: var(--ink); }
+  .clear-btn {
+    font: inherit; font-size: 12px; color: var(--muted); background: none;
+    border: none; cursor: pointer; padding: 0; text-decoration: underline;
+  }
+  .clear-btn:hover { color: #dc2626; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 32px; }
+
+  @keyframes chip-pop {
+    0%   { transform: scale(.7); opacity: 0; background: var(--flash); color: var(--flash-ink); }
+    55%  { transform: scale(1.05); background: var(--flash); color: var(--flash-ink); }
+    100% { transform: scale(1); opacity: 1; background: var(--accent-bg); color: var(--accent); }
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 4px 8px 4px 11px;
+    background: var(--accent-bg); color: var(--accent);
+    border-radius: 999px; font-size: 13px;
+  }
+  .chip.is-new { animation: chip-pop .4s ease forwards; }
+  .chip-x {
+    width: 18px; height: 18px; border-radius: 50%; background: none; border: none;
+    cursor: pointer; color: inherit; font-size: 15px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .1s; padding: 0;
+  }
+  .chip-x:hover { background: rgba(8,145,178,.18); }
+
+  .empty-chips { font-size: 13px; color: var(--muted); font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Paste to Add Options <span style="font-weight:400; color:var(--muted);">— Prototype</span></h1>
+  <span class="tag">spike</span>
+  <a href="/">← back</a>
+</header>
+
+<div class="page">
+
+  <div>
+    <div class="pane-label"><span class="dot" style="background:#f59e0b"></span> Edit mode — admin</div>
+    <div class="q-config">
+      <input type="text" id="q-text" value="Which equipment would you like included with your booking?" />
+      <div class="type-toggle">
+        <button class="active" id="btn-multi">Multi-select</button>
+        <button id="btn-single">Single-select</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sample lists -->
+  <div>
+    <div class="section-label">Sample lists — click to add</div>
+    <div class="sample-grid">
+
+      <div class="sample-card">
+        <div class="sample-card-title">Furniture &amp; Setup</div>
+        <div class="sample-card-count" id="count-a"></div>
+        <ul class="sample-items" id="list-a"></ul>
+        <div class="copy-hint">Select all &amp; copy, then paste below</div>
+      </div>
+
+      <div class="sample-card">
+        <div class="sample-card-title">Audio / Visual &amp; Stage</div>
+        <div class="sample-card-count" id="count-b"></div>
+        <ul class="sample-items" id="list-b"></ul>
+        <div class="copy-hint">Select all &amp; copy, then paste below</div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Paste zone -->
+  <div class="paste-zone">
+    <div class="paste-zone-label">Or paste your own list</div>
+    <textarea id="paste-ta" placeholder="Paste options here — one per line&#10;&#10;Duplicates are skipped automatically."></textarea>
+    <div class="paste-zone-foot">
+      <span class="paste-hint">Paste auto-splits · or click Add</span>
+      <button class="add-btn" id="add-btn">Add options</button>
+    </div>
+  </div>
+
+  <!-- Chips -->
+  <div>
+    <div class="chips-header">
+      <span>Options added: <span class="count" id="count">0</span></span>
+      <button class="clear-btn" id="clear-btn">Clear all</button>
+    </div>
+    <div class="chips" id="chips">
+      <span class="empty-chips">No options yet — try a sample list above or paste your own.</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const LISTS = {
+    a: [
+      "Round banquet tables (60 in)",
+      "Rectangular banquet tables (8 ft)",
+      "Cocktail high-top tables",
+      "Padded banquet chairs",
+      "White folding chairs",
+      "Chair covers (white)",
+      "Tablecloths (white linen)",
+      "Coat rack",
+      "Portable bar table",
+      "Easel display stands",
+    ],
+    b: [
+      "Projector & screen",
+      "HDMI cable & adapters",
+      "Wireless lavalier microphone",
+      "Handheld wireless microphone",
+      "PA system & speakers",
+      "DJ table & power strip",
+      "Dance floor panels (12×12 ft)",
+      "Stage risers (4×8 ft sections)",
+      "Pipe & drape backdrop",
+      "Podium / lectern",
+    ],
+  };
+
+  let options = [];
+  let nextId  = 1;
+
+  // ── Populate sample card displays ────────────────────────────
+  ['a', 'b'].forEach(key => {
+    const items = LISTS[key];
+    document.getElementById(`count-${key}`).textContent = `${items.length} items`;
+    const ul = document.getElementById(`list-${key}`);
+    items.forEach(text => {
+      const li = document.createElement('li');
+      li.textContent = text;
+      ul.appendChild(li);
+    });
+  });
+
+  // ── Core logic ────────────────────────────────────────────────
+  function parseLines(raw) {
+    return raw
+      .split(/\r?\n/)
+      .map(l => l.replace(/^[\s•\-\*\d\.\)]+/, '').trim())
+      .filter(l => l.length > 0);
+  }
+
+  function addOptions(lines, animate) {
+    const seen = new Set(options.map(o => o.text.toLowerCase()));
+    const freshIds = [];
+    lines.forEach(text => {
+      if (!seen.has(text.toLowerCase())) {
+        const id = nextId++;
+        options.push({ id, text, isNew: animate });
+        seen.add(text.toLowerCase());
+        freshIds.push(id);
+      }
+    });
+    render();
+    if (animate && freshIds.length) {
+      setTimeout(() => {
+        options.forEach(o => { if (freshIds.includes(o.id)) o.isNew = false; });
+      }, 500);
+    }
+    return freshIds.length;
+  }
+
+  function removeOption(id) {
+    options = options.filter(o => o.id !== id);
+    render();
+  }
+
+  function render() {
+    const chipsEl = document.getElementById('chips');
+    chipsEl.innerHTML = '';
+    if (options.length === 0) {
+      chipsEl.innerHTML = '<span class="empty-chips">No options yet — try a sample list above or paste your own.</span>';
+    } else {
+      options.forEach(opt => {
+        const el = document.createElement('div');
+        el.className = 'chip' + (opt.isNew ? ' is-new' : '');
+        el.innerHTML = `<span>${opt.text}</span><button class="chip-x" title="Remove">×</button>`;
+        el.querySelector('.chip-x').addEventListener('click', () => removeOption(opt.id));
+        chipsEl.appendChild(el);
+      });
+    }
+    document.getElementById('count').textContent = options.length;
+  }
+
+  // ── Paste intercept ───────────────────────────────────────────
+  document.getElementById('paste-ta').addEventListener('paste', e => {
+    e.preventDefault();
+    const lines = parseLines(e.clipboardData.getData('text'));
+    if (lines.length) addOptions(lines, true);
+  });
+
+  // ── Add button ────────────────────────────────────────────────
+  document.getElementById('add-btn').addEventListener('click', () => {
+    const ta = document.getElementById('paste-ta');
+    const lines = parseLines(ta.value);
+    if (lines.length) { addOptions(lines, true); ta.value = ''; }
+  });
+
+  // ── Type toggle ───────────────────────────────────────────────
+  document.getElementById('btn-multi').addEventListener('click', () => {
+    document.getElementById('btn-multi').classList.add('active');
+    document.getElementById('btn-single').classList.remove('active');
+  });
+  document.getElementById('btn-single').addEventListener('click', () => {
+    document.getElementById('btn-single').classList.add('active');
+    document.getElementById('btn-multi').classList.remove('active');
+  });
+
+  // ── Clear all ─────────────────────────────────────────────────
+  document.getElementById('clear-btn').addEventListener('click', () => {
+    options = [];
+    render();
+  });
+</script>
+
+</body>
+</html>

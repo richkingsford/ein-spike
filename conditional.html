@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Conditional Questions — Prototype</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #fff;
+    --ink: #1a1a1a;
+    --muted: #6b7280;
+    --line: #e5e7eb;
+    --accent: #059669;
+    --accent-bg: #d1fae5;
+    --blue: #1f6feb;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; background: var(--bg); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+
+  header {
+    background: #fff; border-bottom: 1px solid var(--line);
+    padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+    height: 50px;
+  }
+  header h1 { font-size: 15px; margin: 0; flex: 1; }
+  .tag { font-size: 11px; color: var(--muted); padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; }
+  header a { font-size: 13px; color: var(--muted); text-decoration: none; }
+  header a:hover { color: var(--ink); }
+
+  .split {
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    height: calc(100vh - 50px);
+  }
+
+  /* ── Edit pane ─────────────────────────────────────────────── */
+  .edit-pane {
+    background: #fff;
+    border-bottom: 2px solid var(--line);
+    overflow: auto;
+    padding: 18px 20px;
+  }
+  .pane-label {
+    font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--muted); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .dot-amber { background: #f59e0b; }
+  .dot-blue  { background: var(--blue); }
+
+  .builder {
+    max-width: 660px;
+    background: #f9fafb;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    position: relative;
+  }
+
+  .menu-anchor { position: absolute; top: 12px; right: 14px; }
+
+  .menu-btn {
+    width: 28px; height: 28px;
+    border: 1px solid var(--line); border-radius: 6px;
+    background: #fff; cursor: pointer;
+    font-size: 18px; line-height: 1; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s, color .15s;
+  }
+  .menu-btn:hover { background: #f3f4f6; color: var(--ink); }
+
+  .dropdown {
+    position: absolute; top: 32px; right: 0;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+    min-width: 210px;
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+  }
+  .dropdown.open { display: block; }
+
+  .dd-item {
+    padding: 9px 14px;
+    font-size: 13px; cursor: pointer; color: var(--ink);
+    transition: background .1s;
+  }
+  .dd-item:hover { background: #f3f4f6; }
+  .dd-item.danger { color: #dc2626; }
+  .dd-item.danger:hover { background: #fef2f2; }
+  .field-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+  }
+  .field-row:last-child { margin-bottom: 0; }
+  .field-row label { font-size: 12px; color: var(--muted); width: 108px; flex-shrink: 0; }
+  .field-row input[type=text], .field-row select {
+    flex: 1; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px;
+    font: inherit; font-size: 13px; background: #fff;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field-row input[type=text]:focus, .field-row select:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,.12);
+  }
+
+  .branch {
+    display: none;
+    margin-top: 14px;
+    border-left: 3px solid var(--accent);
+    padding-left: 16px;
+  }
+  .branch.visible { display: block; }
+  .branch-header {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+  }
+  .chip {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+    background: var(--accent-bg); color: var(--accent);
+    padding: 2px 8px; border-radius: 4px;
+  }
+  .trigger-row {
+    display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 12px; flex-wrap: wrap;
+    color: var(--muted);
+  }
+  .trigger-row select {
+    padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+    font: inherit; font-size: 13px; background: #fff; color: var(--ink);
+  }
+  .trigger-row select:focus { outline: none; border-color: var(--accent); }
+  .arrow { font-weight: 600; color: var(--accent); }
+
+  .follow-up-box {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+
+  /* ── Preview pane ──────────────────────────────────────────── */
+  .preview-pane {
+    overflow: auto;
+    padding: 18px 20px;
+  }
+
+  .renter-form {
+    max-width: 540px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 22px 24px;
+  }
+  .renter-form h2 { font-size: 15px; margin: 0 0 2px; }
+  .renter-form .hint { font-size: 12px; color: var(--muted); margin: 0 0 18px; }
+
+  .form-q { margin-bottom: 18px; }
+  .form-q .q-text { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+  .req { color: #dc2626; margin-left: 2px; }
+
+  .radio-grp { display: flex; gap: 18px; }
+  .radio-grp label { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+  .radio-grp input[type=radio] { width: 16px; height: 16px; accent-color: var(--accent); }
+
+  .text-input {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+    font: inherit; font-size: 13px;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .text-input:focus {
+    outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(5,150,105,.12);
+  }
+  input[type=number].text-input { width: 140px; }
+
+  /* Conditional reveal animation */
+  .conditional-field {
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+    transition: max-height .3s ease, opacity .25s ease, margin-top .25s ease;
+  }
+  .conditional-field.visible {
+    max-height: 160px;
+    opacity: 1;
+    margin-top: 14px;
+  }
+  .conditional-field .inner {
+    border-left: 3px solid var(--accent);
+    padding-left: 14px;
+  }
+  .conditional-field .q-text { margin-bottom: 8px; }
+
+  .submit-btn {
+    margin-top: 6px;
+    padding: 9px 22px; background: var(--accent); color: #fff;
+    border: 0; border-radius: 6px; font: inherit; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: filter .15s;
+  }
+  .submit-btn:hover { filter: brightness(1.07); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Conditional Questions <span style="font-weight:400; color:var(--muted);">— Prototype</span></h1>
+  <span class="tag">spike</span>
+  <a href="/">← back</a>
+</header>
+
+<div class="split">
+
+  <!-- ── TOP: Edit mode ──────────────────────────────────────── -->
+  <div class="edit-pane">
+    <div class="pane-label"><span class="dot dot-amber"></span> Edit mode — admin</div>
+
+    <div class="builder">
+      <div class="menu-anchor">
+        <button class="menu-btn" id="menu-btn" title="Question options">···</button>
+        <div class="dropdown" id="dropdown">
+          <div class="dd-item" id="dd-cond">＋ Add conditional follow-up</div>
+        </div>
+      </div>
+
+      <!-- Primary question -->
+      <div class="field-row">
+        <label>Question</label>
+        <input type="text" id="q-text" value="Will alcohol be served at your event?" />
+      </div>
+      <div class="field-row">
+        <label>Answer type</label>
+        <select id="q-type">
+          <option value="yesno" selected>Yes / No</option>
+          <option value="text">Short text</option>
+          <option value="number">Number</option>
+        </select>
+      </div>
+
+      <!-- Conditional branch (hidden until toggled) -->
+      <div class="branch" id="branch">
+        <div class="branch-header">
+          <span class="chip">If</span>
+          <span style="font-size:13px; color:var(--muted);">answer equals</span>
+        </div>
+        <div class="trigger-row">
+          <select id="trigger-val">
+            <option value="Yes" selected>Yes</option>
+            <option value="No">No</option>
+          </select>
+          <span class="arrow">→</span>
+          <span>show follow-up:</span>
+        </div>
+        <div class="follow-up-box">
+          <div class="field-row">
+            <label>Follow-up</label>
+            <input type="text" id="fu-text" value="Please enter your ABC permit number or attach proof of licensure:" />
+          </div>
+          <div class="field-row">
+            <label>Answer type</label>
+            <select id="fu-type">
+              <option value="text" selected>Short text</option>
+              <option value="textarea">Long text</option>
+              <option value="number">Number</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM: Preview / renter view ───────────────────────── -->
+  <div class="preview-pane">
+    <div class="pane-label"><span class="dot dot-blue"></span> Preview — renter view</div>
+
+    <div class="renter-form">
+      <h2>Event Application</h2>
+      <p class="hint">Complete all required fields before submitting.</p>
+
+      <!-- Static preceding question for context -->
+      <div class="form-q">
+        <div class="q-text">Event name <span class="req">*</span></div>
+        <input class="text-input" type="text" placeholder="e.g. Annual Spring Gala" />
+      </div>
+
+      <!-- Conditional question (driven by edit mode) -->
+      <div class="form-q">
+        <div class="q-text" id="preview-q-label">Will alcohol be served at your event? <span class="req">*</span></div>
+        <div class="radio-grp" id="preview-radios">
+          <label><input type="radio" name="primary" value="Yes" /> Yes</label>
+          <label><input type="radio" name="primary" value="No" /> No</label>
+        </div>
+
+        <!-- Follow-up: revealed by condition -->
+        <div class="conditional-field" id="conditional-field">
+          <div class="inner">
+            <div class="q-text" id="preview-fu-label">Please enter your ABC permit number or attach proof of licensure: <span class="req">*</span></div>
+            <div id="preview-fu-wrap">
+              <input class="text-input" type="text" id="preview-fu-input" placeholder="e.g. 12345678-ABC" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Static trailing question -->
+      <div class="form-q">
+        <div class="q-text">Expected number of attendees <span class="req">*</span></div>
+        <input class="text-input" type="number" min="1" placeholder="0" style="width:140px;" />
+      </div>
+
+      <button class="submit-btn">Submit application</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const qTextEl   = document.getElementById('q-text');
+  const fuTextEl  = document.getElementById('fu-text');
+  const fuTypeEl  = document.getElementById('fu-type');
+  const trigValEl = document.getElementById('trigger-val');
+
+  const previewQLabel  = document.getElementById('preview-q-label');
+  const previewFuLabel = document.getElementById('preview-fu-label');
+  const previewFuWrap  = document.getElementById('preview-fu-wrap');
+  const condField      = document.getElementById('conditional-field');
+
+  function buildFuInput() {
+    const type = fuTypeEl.value;
+    let el;
+    if (type === 'textarea') {
+      el = document.createElement('textarea');
+      el.rows = 3;
+      el.className = 'text-input';
+      el.id = 'preview-fu-input';
+      el.placeholder = 'Your answer';
+      el.style.resize = 'vertical';
+    } else {
+      el = document.createElement('input');
+      el.className = 'text-input';
+      el.id = 'preview-fu-input';
+      el.type = type === 'number' ? 'number' : 'text';
+      el.placeholder = type === 'number' ? '0' : 'Your answer';
+    }
+    previewFuWrap.innerHTML = '';
+    previewFuWrap.appendChild(el);
+  }
+
+  function syncLabels() {
+    previewQLabel.innerHTML  = qTextEl.value  + ' <span class="req">*</span>';
+    previewFuLabel.innerHTML = fuTextEl.value + ' <span class="req">*</span>';
+    buildFuInput();
+  }
+
+  function checkCondition() {
+    const selected = document.querySelector('input[name="primary"]:checked');
+    const answer   = selected ? selected.value : null;
+    condField.classList.toggle('visible', answer === trigValEl.value);
+  }
+
+  qTextEl.addEventListener('input', syncLabels);
+  fuTextEl.addEventListener('input', syncLabels);
+  fuTypeEl.addEventListener('change', () => { syncLabels(); checkCondition(); });
+  trigValEl.addEventListener('change', checkCondition);
+
+  document.getElementById('preview-radios').addEventListener('change', checkCondition);
+
+  // ── Corner menu ──────────────────────────────────────────────────────────
+  const menuBtn  = document.getElementById('menu-btn');
+  const dropdown = document.getElementById('dropdown');
+  const ddCond   = document.getElementById('dd-cond');
+  const branchEl = document.getElementById('branch');
+  let hasCondition = false;
+
+  menuBtn.addEventListener('click', e => {
+    e.stopPropagation();
+    dropdown.classList.toggle('open');
+  });
+  document.addEventListener('click', () => dropdown.classList.remove('open'));
+
+  ddCond.addEventListener('click', () => {
+    hasCondition = !hasCondition;
+    branchEl.classList.toggle('visible', hasCondition);
+    if (hasCondition) {
+      ddCond.textContent = '✕ Remove conditional';
+      ddCond.classList.add('danger');
+    } else {
+      ddCond.textContent = '＋ Add conditional follow-up';
+      ddCond.classList.remove('danger');
+      condField.classList.remove('visible');
+    }
+    dropdown.classList.remove('open');
+  });
+</script>
+
+</body>
+</html>
