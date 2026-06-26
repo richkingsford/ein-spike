@@ -141,11 +141,21 @@
   .tile.ein .cta { color: #8aa6ff; }
   .tile.scan .cta { color: #d39bff; }
   .tile.cond .cta { color: #6ee7b7; }
+  .tile.slot .icon {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 10px 24px rgba(249,115,22,.35);
+  }
+  .tile.slot .cta { color: #fdba74; }
   .tile.paste .icon {
     background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
     box-shadow: 0 10px 24px rgba(8,145,178,.35);
   }
   .tile.paste .cta { color: #67e8f9; }
+  .tile.simple .icon {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+    box-shadow: 0 10px 24px rgba(8,145,178,.35);
+  }
+  .tile.simple .cta { color: #67e8f9; }
 
   footer {
     text-align: center;
@@ -222,6 +232,37 @@
       <h2>Conditional Questions</h2>
       <p>Trigger follow-up fields based on user answers — form logic that shows the right question at the right moment, automatically.</p>
       <span class="cta">Build a conditional form <span aria-hidden="true">→</span></span>
+    </a>
+
+    <a class="tile slot" href="./slotbot.html">
+      <span class="tile-tag">prototype</span>
+      <div class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <path d="M16 2v4"/><path d="M8 2v4"/>
+          <path d="M3 10h18"/>
+          <path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/>
+          <path d="M8 18h.01"/><path d="M12 18h.01"/>
+        </svg>
+      </div>
+      <h2>SlotBot — Feature Parity</h2>
+      <p>Full-featured availability wizard with date ranges, rate types, bulk editing, and column-filter multi-select for power users.</p>
+      <span class="cta">Open the Availability Studio <span aria-hidden="true">→</span></span>
+    </a>
+
+    <a class="tile simple" href="./slotbot-simple.html">
+      <span class="tile-tag">prototype</span>
+      <div class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2"/>
+          <path d="M16 2v4"/><path d="M8 2v4"/>
+          <path d="M3 10h18"/>
+          <path d="M8 14h8"/><path d="M8 18h5"/>
+        </svg>
+      </div>
+      <h2>SlotBot — Calendly Style</h2>
+      <p>Calendly-style weekly availability editor — toggle days on/off and set time ranges with a clean, minimal interface.</p>
+      <span class="cta">Set weekly hours <span aria-hidden="true">→</span></span>
     </a>
 
     <a class="tile paste" href="./paste-options.html">

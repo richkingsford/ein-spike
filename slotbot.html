@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlotBot Feature Parity · Availability Studio</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+.hidden { display: none !important; }
+
+/* ── Header ── */
+header {
+  padding: 14px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-bottom: 1px solid #e2e8f0;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; text-decoration: none; color: #1e293b; }
+.brand-mark {
+  width: 26px; height: 26px; border-radius: 7px;
+  background: linear-gradient(135deg, #4361ee, #7209b7);
+  box-shadow: 0 4px 12px rgba(67,97,238,.3);
+}
+.brand-sub { color: #64748b; font-weight: 400; }
+nav a { color: #64748b; text-decoration: none; font-size: 13px; margin-left: 18px; transition: color .15s; }
+nav a:hover { color: #1e293b; }
+nav a.here { color: #ea580c; font-weight: 600; }
+
+/* ── Main ── */
+main { max-width: 1140px; margin: 0 auto; padding: 28px 20px 60px; }
+
+.page-header { margin-bottom: 24px; display: flex; align-items: flex-start; justify-content: space-between; }
+.page-header h1 {
+  font-size: 21px; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.page-header h1 .badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  padding: 3px 9px; border-radius: 20px; color: #fff;
+}
+.page-header p { font-size: 13px; color: #64748b; margin-top: 4px; }
+.facility-label {
+  font-size: 12px; color: #64748b; background: #f1f5f9;
+  border: 1px solid #e2e8f0; padding: 4px 12px; border-radius: 20px;
+}
+
+/* ── Action Hub ── */
+.action-hub { display: flex; gap: 12px; margin-bottom: 20px; }
+
+.hub-card {
+  flex: 1; background: #fff;
+  border: 1px solid #e2e8f0; border-radius: 12px;
+  padding: 14px 18px; display: flex; align-items: center; gap: 14px;
+  cursor: pointer; transition: all .15s; text-align: left; color: #1e293b;
+  font-family: inherit; font-size: inherit;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.hub-card:hover:not(.disabled) {
+  border-color: #cbd5e1; background: #f8fafc; transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.hub-card.disabled { opacity: .42; cursor: not-allowed; }
+
+.hub-icon {
+  width: 38px; height: 38px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px; flex-shrink: 0;
+}
+.hub-card.add-card .hub-icon { background: linear-gradient(135deg, #f97316, #ea580c); box-shadow: 0 4px 12px rgba(249,115,22,.3); }
+.hub-card.edit-card .hub-icon { background: linear-gradient(135deg, #0ea5e9, #0284c7); box-shadow: 0 4px 12px rgba(14,165,233,.3); }
+.hub-card.remove-card .hub-icon { background: linear-gradient(135deg, #ef4444, #dc2626); box-shadow: 0 4px 12px rgba(239,68,68,.3); }
+
+.hub-text strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.hub-text span { font-size: 12px; color: #64748b; }
+
+/* ── Selection bar ── */
+.sel-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.row-count { font-size: 12px; color: #64748b; }
+.sel-badge {
+  font-size: 11px; font-weight: 700;
+  background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.3);
+  color: #ea580c; padding: 3px 10px; border-radius: 20px;
+}
+
+/* ── Schedule table ── */
+.table-wrap { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+
+.schedule-table { width: 100%; border-collapse: collapse; }
+.schedule-table thead tr { background: #f8fafc; border-bottom: 1px solid #e2e8f0; }
+.schedule-table th {
+  padding: 11px 14px; text-align: left; font-size: 10px; font-weight: 700;
+  letter-spacing: .07em; text-transform: uppercase; color: #64748b; white-space: nowrap;
+}
+.schedule-table th:first-child { width: 44px; padding-left: 16px; }
+.schedule-table td {
+  padding: 10px 14px; font-size: 13px; border-bottom: 1px solid #f1f5f9; vertical-align: middle;
+}
+.schedule-table td:first-child { padding-left: 16px; }
+.schedule-table tbody tr:hover:not(.month-group) { background: #fafafa; }
+.schedule-table tbody tr.row-selected { background: #fff7ed !important; }
+.schedule-table tbody tr.row-new { animation: highlightNew 3s ease forwards; }
+@keyframes highlightNew { 0%,30% { background: rgba(16,185,129,.08); } 100% { background: transparent; } }
+
+.month-group td {
+  background: #f1f5f9; color: #94a3b8; font-size: 10px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; padding: 7px 14px 7px 16px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Rate chips */
+.chip {
+  display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px;
+  background: rgba(67,97,238,.08); border: 1px solid rgba(67,97,238,.2); color: #2563eb;
+}
+.chip.premium { background: rgba(114,9,183,.07); border-color: rgba(114,9,183,.2); color: #9333ea; }
+.chip.offpeak { background: rgba(14,165,233,.07); border-color: rgba(14,165,233,.2); color: #0284c7; }
+.chip.none { background: #f1f5f9; border-color: #e2e8f0; color: #94a3b8; font-style: italic; }
+.chip.current { background: rgba(5,150,105,.07); border-color: rgba(5,150,105,.2); color: #059669; }
+.chip.future { background: rgba(217,119,6,.07); border-color: rgba(217,119,6,.2); color: #d97706; }
+
+input[type="checkbox"] { width: 14px; height: 14px; accent-color: #f97316; cursor: pointer; }
+
+/* ── WIZARD ── */
+.wizard-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; justify-content: flex-end;
+}
+.wizard-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.35); backdrop-filter: blur(3px); cursor: pointer;
+}
+.wizard-panel {
+  position: relative; width: 488px; max-width: 96vw;
+  height: 100vh; background: #fff;
+  border-left: 1px solid #e2e8f0;
+  display: flex; flex-direction: column;
+  animation: slideIn .2s cubic-bezier(.16,1,.3,1);
+  box-shadow: -8px 0 32px rgba(0,0,0,.1);
+}
+@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.wiz-header {
+  padding: 18px 22px; border-bottom: 1px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.wiz-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.wiz-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+.wiz-close {
+  background: none; border: none; color: #94a3b8; cursor: pointer;
+  width: 30px; height: 30px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; font-size: 18px; transition: all .1s;
+}
+.wiz-close:hover { background: #f1f5f9; color: #1e293b; }
+
+/* Progress */
+.wiz-progress { padding: 14px 22px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
+.prog-steps { display: flex; align-items: center; }
+.prog-step { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.prog-circle {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #94a3b8; transition: all .2s;
+}
+.prog-circle.active { border-color: #f97316; background: #f97316; color: #fff; }
+.prog-circle.done { border-color: #10b981; background: #10b981; color: #fff; }
+.prog-label { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+.prog-label.active { color: #ea580c; font-weight: 600; }
+.prog-line { flex: 1; height: 2px; background: #e2e8f0; margin: 0 8px; margin-bottom: 14px; transition: background .2s; }
+.prog-line.done { background: #10b981; }
+
+/* Wizard body / footer */
+.wiz-body { flex: 1; overflow-y: auto; padding: 20px 22px; scroll-behavior: smooth; }
+.wiz-body::-webkit-scrollbar { width: 3px; }
+.wiz-body::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 2px; }
+
+.wiz-footer {
+  padding: 14px 22px; border-top: 1px solid #e2e8f0;
+  display: flex; gap: 8px; justify-content: flex-end; flex-shrink: 0;
+  background: #f8fafc;
+}
+
+/* ── Form elements ── */
+.fgrp { margin-bottom: 18px; }
+.flabel {
+  font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+  color: #64748b; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+}
+.info-tip {
+  width: 13px; height: 13px; background: #e2e8f0; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 8px; cursor: help; color: #64748b;
+}
+
+/* Date row */
+.date-row { display: flex; gap: 10px; }
+.date-field { flex: 1; }
+.date-field label { font-size: 11px; color: #64748b; display: block; margin-bottom: 5px; }
+.inp {
+  width: 100%; background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 8px 11px; color: #1e293b; font-size: 13px;
+  outline: none; transition: border-color .15s; font-family: inherit;
+}
+.inp:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,.1); }
+
+/* Day pills */
+.day-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.day-pill {
+  width: 36px; height: 36px; border-radius: 8px;
+  border: 1px solid #e2e8f0; background: #fff;
+  color: #64748b; font-size: 11px; font-weight: 700; cursor: pointer;
+  transition: all .12s; display: flex; align-items: center; justify-content: center;
+  font-family: inherit;
+}
+.day-pill:hover { border-color: #f97316; color: #f97316; }
+.day-pill.on { background: #f97316; border-color: #f97316; color: #fff; box-shadow: 0 2px 8px rgba(249,115,22,.3); }
+
+/* Time slider */
+.time-row { display: flex; gap: 10px; margin-bottom: 12px; }
+.time-grp { flex: 1; }
+.time-grp label { font-size: 11px; color: #64748b; display: block; margin-bottom: 5px; }
+
+.dual-slider { position: relative; height: 36px; display: flex; align-items: center; margin-top: 4px; }
+.sl-track { position: absolute; top: 50%; transform: translateY(-50%); height: 4px; width: 100%; background: #e2e8f0; border-radius: 2px; pointer-events: none; }
+.sl-fill { position: absolute; height: 4px; background: #f97316; border-radius: 2px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+.dual-slider input[type="range"] {
+  position: absolute; width: 100%; height: 4px;
+  -webkit-appearance: none; background: transparent; pointer-events: none; outline: none;
+}
+.dual-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+  background: #f97316; border: 2px solid #fff; box-shadow: 0 1px 5px rgba(0,0,0,.2);
+  pointer-events: all; cursor: pointer; transition: transform .1s;
+}
+.dual-slider input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); }
+#range-start { z-index: 2; }
+#range-end { z-index: 3; }
+
+.sl-labels { display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; margin-top: 6px; }
+
+/* Field error */
+.ferr { font-size: 11px; color: #ef4444; margin-top: 5px; }
+
+/* Radio list */
+.radio-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.radio-sec-label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em;
+  color: #64748b; margin-bottom: 7px; display: flex; align-items: center; gap: 5px;
+}
+.radio-list { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; overflow: hidden; }
+.radio-item {
+  display: flex; align-items: center; gap: 9px; padding: 9px 11px;
+  border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background .1s;
+}
+.radio-item:last-child { border-bottom: none; }
+.radio-item:hover { background: #fff7ed; }
+.radio-item.on { background: #fff7ed; border-left: 2px solid #f97316; }
+.radio-item input[type="radio"] { accent-color: #f97316; flex-shrink: 0; }
+.radio-lbl { font-size: 12px; color: #374151; }
+.radio-lbl.dim { color: #94a3b8; font-style: italic; font-size: 11px; }
+
+/* Effective section */
+.eff-section { margin-top: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 9px; padding: 12px 14px; }
+.eff-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: #64748b; margin-bottom: 10px; }
+.ropt { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 13px; color: #374151; }
+.ropt:last-child { margin-bottom: 0; }
+.ropt input[type="radio"] { accent-color: #f97316; }
+.ropt label { cursor: pointer; }
+.eff-date { margin: 8px 0 2px 22px; }
+
+/* Review card */
+.review-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+.rv-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; font-size: 13px; }
+.rv-row + .rv-row { border-top: 1px solid #f1f5f9; }
+.rv-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.rv-val strong { display: block; color: #1e293b; }
+.rv-val small { color: #64748b; font-size: 11px; }
+.slot-count { font-size: 13px; color: #64748b; margin-bottom: 12px; }
+.slot-count strong { color: #059669; }
+
+/* Preview table */
+.prev-toggle { background: none; border: none; color: #2563eb; font-size: 12px; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; font-family: inherit; margin-bottom: 7px; }
+.prev-wrap { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+.prev-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.prev-table th { background: #f1f5f9; padding: 6px 10px; text-align: left; color: #64748b; font-size: 9px; text-transform: uppercase; letter-spacing: .07em; font-weight: 700; }
+.prev-table td { padding: 6px 10px; border-top: 1px solid #f1f5f9; color: #64748b; }
+.prev-more { color: #94a3b8; font-style: italic; text-align: center; }
+
+/* Buttons */
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; transition: all .15s; font-family: inherit; }
+.btn-ghost { background: none; border: 1px solid #e2e8f0; color: #64748b; }
+.btn-ghost:hover { border-color: #94a3b8; color: #1e293b; background: #f8fafc; }
+.btn-primary { background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; box-shadow: 0 3px 10px rgba(249,115,22,.25); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(249,115,22,.35); }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+.btn-danger { background: #dc2626; color: #fff; box-shadow: 0 3px 10px rgba(220,38,38,.2); }
+.btn-danger:hover { background: #b91c1c; }
+.btn-blue { background: linear-gradient(135deg, #4361ee, #3730a3); color: #fff; box-shadow: 0 3px 10px rgba(67,97,238,.2); }
+.btn-blue:hover { transform: translateY(-1px); }
+
+/* Edit wizard */
+.change-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 9px; margin-bottom: 9px; overflow: hidden; }
+.change-card-head { display: flex; align-items: center; gap: 9px; padding: 11px 13px; cursor: pointer; transition: background .1s; user-select: none; }
+.change-card-head:hover { background: #f8fafc; }
+.change-card-head .cc-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+.change-card-head .cc-sub { font-size: 11px; color: #94a3b8; margin-left: auto; }
+.change-card-body { padding: 0 13px 13px; border-top: 1px solid #f1f5f9; display: none; }
+.change-card-body.open { display: block; padding-top: 11px; }
+
+/* Edit review */
+.edit-ctx { font-size: 13px; color: #64748b; margin-bottom: 14px; }
+.edit-ctx strong { color: #1e293b; }
+.change-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: #f8fafc; border-radius: 8px; margin-bottom: 7px; font-size: 13px; border: 1px solid #f1f5f9; }
+.change-field { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #94a3b8; min-width: 90px; }
+.change-from { color: #94a3b8; }
+.change-arr { color: #cbd5e1; }
+.change-to { color: #059669; font-weight: 700; }
+.no-changes { font-size: 13px; color: #94a3b8; font-style: italic; text-align: center; padding: 20px; }
+
+/* Remove */
+.danger-banner { background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 13px; margin-bottom: 12px; }
+.danger-banner h3 { color: #dc2626; font-size: 14px; margin-bottom: 3px; }
+.danger-banner p { font-size: 12px; color: #64748b; }
+.remove-list { max-height: 220px; overflow-y: auto; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
+.remove-list::-webkit-scrollbar { width: 3px; }
+.remove-list::-webkit-scrollbar-thumb { background: #cbd5e1; }
+.rm-item { font-size: 12px; padding: 5px 0; border-bottom: 1px solid #f1f5f9; color: #64748b; display: flex; gap: 10px; }
+.rm-item:last-child { border-bottom: none; }
+.rm-date { color: #374151; min-width: 110px; }
+.cant-undo { font-size: 11px; color: #94a3b8; }
+
+/* Help note */
+.help-note { font-size: 11px; color: #64748b; background: #f1f5f9; border-radius: 6px; padding: 7px 10px; margin-top: 6px; line-height: 1.5; }
+
+/* Divider */
+.div { height: 1px; background: #f1f5f9; margin: 16px 0; }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 300;
+  background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+  padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transform: translateY(70px); opacity: 0; transition: all .22s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.red { background: #fef2f2; border-color: #fca5a5; color: #991b1b; }
+
+@media (max-width: 640px) {
+  .action-hub { flex-direction: column; }
+  .radio-cols { grid-template-columns: 1fr; }
+  .wizard-panel { width: 100vw; }
+  main { padding: 16px 12px 40px; }
+}
+
+/* Header filter */
+th.th-flt { cursor: pointer; user-select: none; transition: background .1s; }
+th.th-flt:hover { background: #fff7ed; }
+.flt-caret { font-size: 10px; opacity: .65; margin-left: 4px; vertical-align: middle; }
+th.th-flt:hover .flt-caret { opacity: 1; color: #ea580c; }
+
+/* Header dropdown */
+.hdr-dd {
+  position: fixed; z-index: 500;
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 10px; padding: 5px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.12);
+  min-width: 210px; animation: fadeIn .1s ease;
+}
+@keyframes fadeIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+.hdr-dd-title { font-size: 10px; color: #94a3b8; letter-spacing:.07em; text-transform:uppercase; padding: 5px 9px 6px; }
+.hdr-dd-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; color: #374151; transition: background .1s;
+}
+.hdr-dd-item:hover { background: #fff7ed; color: #ea580c; }
+.hdr-dd-item.active { background: #fff7ed; color: #ea580c; font-weight: 600; }
+.hdr-dd-count { font-size: 11px; color: #94a3b8; font-weight: 600; }
+.hdr-dd-sep { height: 1px; background: #f1f5f9; margin: 4px 2px; }
+.hdr-dd-clear { color: #94a3b8; font-size: 12px; }
+.hdr-dd-clear:hover { color: #dc2626; background: #fef2f2; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="./index.html">
+    <div class="brand-mark"></div>
+    RichForge <span class="brand-sub">&nbsp;· spikes</span>
+  </a>
+  <nav>
+    <a href="./index.html">Home</a>
+    <a href="./ein.html">EIN</a>
+    <a href="./conditional.html">Conditional Q</a>
+    <a href="./slotbot.html" class="here">SlotBot</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-header">
+    <div>
+      <h1>SlotBot — Feature Parity <span class="badge">PROTOTYPE</span></h1>
+      <p>Availability Studio — Riverside Community Center · 2026–2027 Season</p>
+    </div>
+    <div class="facility-label">Gymnasium A</div>
+  </div>
+
+  <!-- Action Hub -->
+  <div class="action-hub">
+    <button class="hub-card add-card" onclick="openAdd()">
+      <div class="hub-icon">＋</div>
+      <div class="hub-text">
+        <strong>Add Availability</strong>
+        <span>Open the 3-step wizard</span>
+      </div>
+    </button>
+    <button class="hub-card edit-card" id="edit-btn" onclick="openEdit()">
+      <div class="hub-icon">✎</div>
+      <div class="hub-text">
+        <strong>Edit Schedule Rows</strong>
+        <span id="edit-hint">Select rows first</span>
+      </div>
+    </button>
+    <button class="hub-card remove-card" id="remove-btn" onclick="openRemove()">
+      <div class="hub-icon">✕</div>
+      <div class="hub-text">
+        <strong>Remove Schedule Rows</strong>
+        <span id="remove-hint">Select rows first</span>
+      </div>
+    </button>
+  </div>
+
+  <!-- Selection bar -->
+  <div class="sel-bar">
+    <div class="row-count" id="row-count"></div>
+    <div class="sel-badge hidden" id="sel-badge"></div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table class="schedule-table" id="sched-table">
+      <thead>
+        <tr>
+          <th><input type="checkbox" id="select-all" onchange="selectAll(this)"></th>
+          <th>Date</th>
+          <th class="th-flt" onclick="openHdrFilter('day','Day of Week',event)">Day <span class="flt-caret">▼</span></th>
+          <th>Available Hours</th>
+          <th class="th-flt" onclick="openHdrFilter('facilityRate','Facility Rate',event)">Facility Rate <span class="flt-caret">▼</span></th>
+          <th class="th-flt" onclick="openHdrFilter('serviceRate','Service Rate',event)">Service Rate <span class="flt-caret">▼</span></th>
+          <th class="th-flt" onclick="openHdrFilter('effective','Effective',event)">Effective <span class="flt-caret">▼</span></th>
+        </tr>
+      </thead>
+      <tbody id="sched-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Wizard overlay -->
+<div class="wizard-overlay hidden" id="wiz-overlay">
+  <div class="wizard-backdrop" onclick="closeWiz()"></div>
+  <div class="wizard-panel">
+    <div class="wiz-header">
+      <div>
+        <div class="wiz-title" id="wiz-title">Add Availability</div>
+        <div class="wiz-sub" id="wiz-sub">Step 1 of 3</div>
+      </div>
+      <button class="wiz-close" onclick="closeWiz()">✕</button>
+    </div>
+    <div id="wiz-prog"></div>
+    <div class="wiz-body" id="wiz-body"></div>
+    <div class="wiz-footer" id="wiz-footer"></div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const FAC_RATES = ['Standard Rates','Premium Rates','Off-Peak Rates'];
+const SVC_RATES = ['Standard Service Rates','Premium Service Rates'];
+
+let uid = 1;
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+function fmtVal(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function parseVal(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+function fmtHour(h) {
+  if (h === 0) return '12:00 AM';
+  if (h === 12) return '12:00 PM';
+  return h < 12 ? `${h}:00 AM` : `${h-12}:00 PM`;
+}
+
+function chipClass(s) {
+  if (!s || s.includes('No Rate') || s.includes('No Service')) return 'none';
+  if (s.includes('Premium')) return 'premium';
+  if (s.includes('Off-Peak')) return 'offpeak';
+  return '';
+}
+
+function generateData() {
+  const rows = [];
+  const start = new Date(2026, 5, 25);
+  const patterns = [
+    {fr:'Standard Rates', sr:'Standard Service Rates', eff:'Current'},
+    {fr:'Standard Rates', sr:'Standard Service Rates', eff:'Current'},
+    {fr:'Premium Rates',  sr:'Premium Service Rates',  eff:'07/01/2026'},
+    {fr:'Standard Rates', sr:'Standard Service Rates', eff:'Current'},
+    {fr:'Off-Peak Rates', sr:'No Service Rate',        eff:'Current'},
+    {fr:'Standard Rates', sr:'Standard Service Rates', eff:'Current'},
+    {fr:'Premium Rates',  sr:'Standard Service Rates', eff:'Current'},
+  ];
+  let pi = 0;
+  for (let i = 0; i < 92; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const dow = d.getDay();
+    if (dow === 0) continue;
+    if (dow === 6 && (i % 4 !== 2)) continue;
+    const p = patterns[pi % patterns.length];
+    rows.push({
+      id: uid++, dateObj: new Date(d), dateVal: fmtVal(d), dateDisp: fmtDate(d),
+      day: DAYS[dow], hours: '8:00 AM – 10:00 PM',
+      facilityRate: p.fr, serviceRate: p.sr, effective: p.eff,
+      selected: false, isNew: false
+    });
+    pi++;
+  }
+  return rows;
+}
+
+let data = generateData();
+
+// ═══════════════════════════════════════════════════════
+// TABLE
+// ═══════════════════════════════════════════════════════
+
+function monthKey(row) {
+  return `${MONTHS[row.dateObj.getMonth()]} ${row.dateObj.getFullYear()}`;
+}
+
+function renderTable() {
+  const tbody = document.getElementById('sched-body');
+  let html = '', lastMonth = '';
+  data.forEach(row => {
+    const mk = monthKey(row);
+    if (mk !== lastMonth) {
+      html += `<tr class="month-group"><td colspan="7">▸ ${mk}</td></tr>`;
+      lastMonth = mk;
+    }
+    const fc = chipClass(row.facilityRate), sc = chipClass(row.serviceRate);
+    const ec = row.effective === 'Current' ? 'current' : 'future';
+    html += `
+      <tr id="r${row.id}" class="${row.selected?'row-selected':''} ${row.isNew?'row-new':''}">
+        <td><input type="checkbox" ${row.selected?'checked':''} onchange="toggleRow(${row.id},this)"></td>
+        <td>${row.dateDisp}</td>
+        <td style="color:#9ca3af">${row.day}</td>
+        <td>${row.hours}</td>
+        <td><span class="chip ${fc}">${row.facilityRate}</span></td>
+        <td><span class="chip ${sc}">${row.serviceRate}</span></td>
+        <td><span class="chip ${ec}">${row.effective}</span></td>
+      </tr>`;
+  });
+  tbody.innerHTML = html;
+  updateMeta();
+}
+
+function updateMeta() {
+  const sel = data.filter(r => r.selected);
+  const n = sel.length, total = data.length;
+
+  document.getElementById('row-count').textContent =
+    `Showing ${total} slot${total!==1?'s':''} · Jun 25 – Sep 23, 2026`;
+
+  const badge = document.getElementById('sel-badge');
+  if (n > 0) {
+    badge.textContent = `${n} row${n!==1?'s':''} selected`;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+
+  const sa = document.getElementById('select-all');
+  sa.indeterminate = n > 0 && n < total;
+  sa.checked = n === total && total > 0;
+}
+
+function toggleRow(id, cb) {
+  const row = data.find(r => r.id === id);
+  if (row) row.selected = cb.checked;
+  const tr = document.getElementById(`r${id}`);
+  if (tr) tr.classList.toggle('row-selected', cb.checked);
+  updateMeta();
+}
+
+function selectAll(cb) {
+  data.forEach(r => r.selected = cb.checked);
+  renderTable();
+}
+
+// ── Column header filter dropdown (multi-select) ───────
+function openHdrFilter(col, label, event) {
+  event.stopPropagation();
+  closeHdrFilter();
+  const th = event.target.closest('th');
+  const rect = th.getBoundingClientRect();
+
+  const counts = {};
+  data.forEach(r => { const v = r[col]; counts[v] = (counts[v]||0) + 1; });
+  const vals = Object.keys(counts).sort((a,b) => {
+    if (col === 'day') return ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(a) - ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].indexOf(b);
+    return a.localeCompare(b);
+  });
+
+  const dd = document.createElement('div');
+  dd.id = 'hdr-dd';
+  dd.className = 'hdr-dd';
+  dd.style.top  = (rect.bottom + 3) + 'px';
+  dd.style.left = Math.min(rect.left, window.innerWidth - 230) + 'px';
+
+  const title = document.createElement('div');
+  title.className = 'hdr-dd-title';
+  title.textContent = `Filter by ${label}`;
+  dd.appendChild(title);
+
+  vals.forEach(v => {
+    const item = document.createElement('div');
+    item.className = 'hdr-dd-item';
+
+    function refresh() {
+      const nSel = data.filter(r => r[col] === v && r.selected).length;
+      const total = counts[v];
+      const checked = nSel > 0 && nSel === total;
+      const partial = nSel > 0 && nSel < total;
+      item.className = 'hdr-dd-item' + (nSel > 0 ? ' active' : '');
+      item.innerHTML = '';
+
+      const cbBox = document.createElement('span');
+      cbBox.style.cssText = `width:14px;height:14px;border-radius:3px;flex-shrink:0;
+        border:1.5px solid ${nSel > 0 ? '#f97316' : '#d1d5db'};
+        background:${checked ? '#f97316' : 'transparent'};
+        display:inline-flex;align-items:center;justify-content:center;`;
+      if (checked)  cbBox.innerHTML = '<span style="color:#fff;font-size:9px;line-height:1;font-weight:900">✓</span>';
+      if (partial)  cbBox.innerHTML = '<span style="color:#f97316;font-size:11px;line-height:1;font-weight:900">−</span>';
+
+      const left = document.createElement('span');
+      left.style.cssText = 'display:flex;align-items:center;gap:8px;flex:1;min-width:0;';
+      left.appendChild(cbBox);
+      const lbl = document.createElement('span');
+      lbl.textContent = v;
+      lbl.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      left.appendChild(lbl);
+
+      const cnt = document.createElement('span');
+      cnt.className = 'hdr-dd-count';
+      cnt.textContent = counts[v];
+
+      item.appendChild(left);
+      item.appendChild(cnt);
+    }
+
+    refresh();
+
+    item.addEventListener('click', e => {
+      e.stopPropagation();
+      const nSel = data.filter(r => r[col] === v && r.selected).length;
+      if (nSel > 0) {
+        data.forEach(r => { if (r[col] === v) r.selected = false; });
+      } else {
+        data.forEach(r => { if (r[col] === v) r.selected = true; });
+      }
+      renderTable();
+      refresh();
+    });
+
+    dd.appendChild(item);
+  });
+
+  const sep = document.createElement('div');
+  sep.className = 'hdr-dd-sep';
+  dd.appendChild(sep);
+
+  const clear = document.createElement('div');
+  clear.className = 'hdr-dd-item hdr-dd-clear';
+  clear.textContent = 'Clear all';
+  clear.addEventListener('click', e => {
+    e.stopPropagation();
+    data.forEach(r => r.selected = false);
+    renderTable();
+    closeHdrFilter();
+  });
+  dd.appendChild(clear);
+
+  document.body.appendChild(dd);
+  window._hdrClose = e => { if (!dd.contains(e.target)) closeHdrFilter(); };
+  setTimeout(() => document.addEventListener('click', window._hdrClose), 0);
+}
+
+function closeHdrFilter() {
+  const el = document.getElementById('hdr-dd');
+  if (el) el.remove();
+  if (window._hdrClose) {
+    document.removeEventListener('click', window._hdrClose);
+    window._hdrClose = null;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// WIZARD STATE
+// ═══════════════════════════════════════════════════════
+
+let wizMode = 'add', wizStep = 1;
+let wizFromPreSel = false;
+
+const S = { days: [], fRate: '', sRate: '' }; // pre-selection filter state
+
+const A = {  // Add state
+  startDate: '', endDate: '',
+  days: [1,2,3,4,5],
+  sh: 8, eh: 22,
+  fRate: 'Standard Rates', sRate: 'Standard Service Rates',
+  effMode: 'current', effDate: '2026-07-01'
+};
+
+const E = {  // Edit state
+  chFac: false, fRate: 'Standard Rates',
+  chSvc: false, sRate: 'Standard Service Rates',
+  chEff: false, effMode: 'current', effDate: '2026-07-01'
+};
+
+// ═══════════════════════════════════════════════════════
+// WIZARD OPEN / CLOSE
+// ═══════════════════════════════════════════════════════
+
+function openAdd() {
+  wizMode = 'add'; wizStep = 1;
+  Object.assign(A, { startDate:'', endDate:'',
+    days:[1,2,3,4,5], sh:8, eh:22,
+    fRate:'Standard Rates', sRate:'Standard Service Rates', effMode:'current', effDate:'2026-07-01' });
+  showWiz(); renderWiz();
+}
+
+function openEdit() {
+  wizMode = 'edit'; wizStep = data.some(r => r.selected) ? 1 : 0;
+  wizFromPreSel = !data.some(r => r.selected);
+  Object.assign(E, { chFac:false, fRate:'Standard Rates', chSvc:false,
+    sRate:'Standard Service Rates', chEff:false, effMode:'current', effDate:'2026-07-01' });
+  if (wizStep === 0) Object.assign(S, { days:[], fRate:'', sRate:'' });
+  showWiz(); renderWiz();
+}
+
+function openRemove() {
+  wizMode = 'remove'; wizStep = data.some(r => r.selected) ? 1 : 0;
+  wizFromPreSel = !data.some(r => r.selected);
+  if (wizStep === 0) Object.assign(S, { days:[], fRate:'', sRate:'' });
+  showWiz(); renderWiz();
+}
+
+function showWiz() { document.getElementById('wiz-overlay').classList.remove('hidden'); }
+function closeWiz() { document.getElementById('wiz-overlay').classList.add('hidden'); }
+
+// ═══════════════════════════════════════════════════════
+// RENDER WIZARD
+// ═══════════════════════════════════════════════════════
+
+function renderWiz() {
+  if (wizMode === 'add')    renderAdd();
+  else if (wizMode === 'edit')   renderEdit();
+  else if (wizMode === 'remove') renderRemove();
+}
+
+// ── ADD ──────────────────────────────────────────────
+
+function renderAdd() {
+  const titles = ['When?', 'Which Rates Apply?', 'Review & Confirm'];
+  document.getElementById('wiz-title').textContent = 'Add Availability';
+  document.getElementById('wiz-sub').textContent = `Step ${wizStep} of 3 · ${titles[wizStep-1]}`;
+  renderProg(3, titles);
+
+  document.getElementById('wiz-body').innerHTML =
+    wizStep === 1 ? addStep1Html() :
+    wizStep === 2 ? addStep2Html() :
+                   addStep3Html();
+
+  document.getElementById('wiz-footer').innerHTML =
+    wizStep === 1 ? `<button class="btn btn-ghost" onclick="closeWiz()">Cancel</button>
+                     <button class="btn btn-primary" onclick="a1next()">Next →</button>` :
+    wizStep === 2 ? `<button class="btn btn-ghost" onclick="aBack()">← Back</button>
+                     <button class="btn btn-primary" onclick="a2next()">Next →</button>` :
+                    `<button class="btn btn-ghost" onclick="aBack()">← Back to Edit</button>
+                     <button class="btn btn-primary" onclick="confirmAdd()">Add Availability →</button>`;
+
+  if (wizStep === 1) setTimeout(() => { initFlatpickr(); initSlider(); }, 0);
+  if (wizStep === 2) setTimeout(() => { initFlatpickrField('fp-eff', A, 'effDate'); }, 0);
+}
+
+function addStep1Html() {
+  const dps = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let h = `
+    <div class="fgrp">
+      <div class="flabel">Date Range</div>
+      <div class="date-row">
+        <div class="date-field"><label>Start date</label>
+          <input class="inp" type="text" id="fp-start" placeholder="Pick a date" readonly></div>
+        <div class="date-field"><label>End date</label>
+          <input class="inp" type="text" id="fp-end" placeholder="Pick a date" readonly></div>
+      </div>
+      <div class="ferr hidden" id="err-date">Please enter a valid date range (end must be after start).</div>
+    </div>
+    <div class="fgrp">
+      <div class="flabel">Repeat on days</div>
+      <div class="day-pills">
+        ${dps.map((d,i) => `<button class="day-pill ${A.days.includes(i)?'on':''}" onclick="toggleDay(${i})" data-d="${i}">${d}</button>`).join('')}
+      </div>
+      <div class="ferr hidden" id="err-days">Please select at least one day of the week.</div>
+    </div>`;
+
+  h += `
+    <div class="fgrp">
+      <div class="flabel">Available hours</div>
+      <div class="help-note">These are the hours renters can reserve this space.</div>
+      <div style="margin-top:12px">
+        <div class="time-row">
+          <div class="time-grp"><label>Open from</label>
+            <input class="inp" type="text" id="t-start" value="${fmtHour(A.sh)}" onchange="parseTimeInp('start',this.value)"></div>
+          <div class="time-grp"><label>Close at</label>
+            <input class="inp" type="text" id="t-end" value="${fmtHour(A.eh)}" onchange="parseTimeInp('end',this.value)"></div>
+        </div>
+        <div class="dual-slider" id="dual-slider">
+          <div class="sl-track"></div>
+          <div class="sl-fill" id="sl-fill"></div>
+          <input type="range" id="range-start" min="0" max="23" value="${A.sh}" oninput="slideStart(this.value)">
+          <input type="range" id="range-end"   min="0" max="23" value="${A.eh}" oninput="slideEnd(this.value)">
+        </div>
+        <div class="sl-labels"><span>12 AM</span><span>6 AM</span><span>12 PM</span><span>6 PM</span><span>11 PM</span></div>
+      </div>
+    </div>`;
+  return h;
+}
+
+function addStep2Html() {
+  const fOpts = [...FAC_RATES, 'No Rate (leave blank)'];
+  const sOpts = [...SVC_RATES, 'No Rate (leave blank)'];
+  return `
+    <div class="fgrp">
+      <div class="radio-cols">
+        <div>
+          <div class="radio-sec-label">Facility Rate <span class="info-tip" title="Space rental fees">?</span></div>
+          <div class="radio-list">
+            ${fOpts.map(r => `
+              <label class="radio-item ${A.fRate===r?'on':''}" onclick="setFRate('${r}')">
+                <input type="radio" name="fr" value="${r}" ${A.fRate===r?'checked':''}>
+                <span class="radio-lbl ${r.includes('No Rate')?'dim':''}">${r}</span>
+              </label>`).join('')}
+          </div>
+        </div>
+        <div>
+          <div class="radio-sec-label">Service Rate <span class="info-tip" title="Staffing & support fees">?</span></div>
+          <div class="radio-list">
+            ${sOpts.map(r => `
+              <label class="radio-item ${A.sRate===r?'on':''}" onclick="setSRate('${r}')">
+                <input type="radio" name="sr" value="${r}" ${A.sRate===r?'checked':''}>
+                <span class="radio-lbl ${r.includes('No Rate')?'dim':''}">${r}</span>
+              </label>`).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="eff-section">
+      <div class="eff-title">When does this take effect?</div>
+      <div class="ropt">
+        <input type="radio" name="eff" value="current" id="eff-now" ${A.effMode==='current'?'checked':''} onchange="setEffMode('current')">
+        <label for="eff-now">Immediately (Current)</label>
+      </div>
+      <div class="ropt">
+        <input type="radio" name="eff" value="date" id="eff-date" ${A.effMode==='date'?'checked':''} onchange="setEffMode('date')">
+        <label for="eff-date">On a specific date:</label>
+      </div>
+      <div class="eff-date ${A.effMode!=='date'?'hidden':''}" id="eff-date-wrap">
+        <input class="inp" type="text" id="fp-eff" placeholder="Pick a date" readonly style="width:200px">
+      </div>
+    </div>`;
+}
+
+function addStep3Html() {
+  const preview = calcPreview();
+  const timeStr = `${fmtHour(A.sh)} – ${fmtHour(A.eh)}`;
+  const effStr = A.effMode === 'current' ? 'Immediately (Current)' : `Effective ${A.effDate}`;
+
+  const sd = parseVal(A.startDate), ed = parseVal(A.endDate);
+  const datesStr = `${fmtDate(sd)} – ${fmtDate(ed)}`;
+  const repeatStr = A.days.length === 7 ? 'Every day' :
+                    A.days.length === 5 && !A.days.includes(0) && !A.days.includes(6) ? 'Mon – Fri' :
+                    A.days.map(d => DAYS[d]).join(', ');
+
+  const previewRows = preview.slice(0, 10);
+  return `
+    <div class="review-card">
+      <div class="rv-row"><div class="rv-icon">📅</div>
+        <div class="rv-val"><strong>${datesStr}</strong><small>${repeatStr}</small></div></div>
+      <div class="rv-row"><div class="rv-icon">🕐</div>
+        <div class="rv-val"><strong>${timeStr}</strong><small>Available hours</small></div></div>
+      <div class="rv-row"><div class="rv-icon">💰</div>
+        <div class="rv-val"><strong>Facility: ${A.fRate}</strong><small>Service: ${A.sRate}</small></div></div>
+      <div class="rv-row"><div class="rv-icon">✅</div>
+        <div class="rv-val"><strong>${effStr}</strong></div></div>
+    </div>
+    <p class="slot-count">This will add <strong>${preview.length} availability slot${preview.length!==1?'s':''}</strong> to your schedule.</p>
+    <button class="prev-toggle" onclick="togglePreview()">▸ Show ${preview.length} row preview</button>
+    <div class="prev-wrap hidden" id="prev-wrap">
+      <table class="prev-table">
+        <thead><tr><th>Date</th><th>Day</th><th>Hours</th><th>Facility Rate</th></tr></thead>
+        <tbody>
+          ${previewRows.map(r => `<tr>
+            <td>${r.dateDisp}</td><td>${r.day}</td><td>${timeStr}</td><td>${A.fRate}</td>
+          </tr>`).join('')}
+          ${preview.length > 10 ? `<tr><td colspan="4" class="prev-more">… and ${preview.length-10} more</td></tr>` : ''}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── EDIT ──────────────────────────────────────────────
+
+function renderEdit() {
+  const sel = data.filter(r => r.selected);
+  document.getElementById('wiz-title').textContent = 'Edit Schedule Rows';
+
+  if (wizStep === 0) {
+    const matchCount = getMatchingRows().length;
+    document.getElementById('wiz-sub').textContent = 'Step 1 of 3 · Select Rows';
+    renderProg(3, ['Select Rows', 'What to Change?', 'Review & Save'], 1);
+    document.getElementById('wiz-body').innerHTML = selectionStepHtml('edit');
+    document.getElementById('wiz-footer').innerHTML = `
+      <button class="btn btn-ghost" onclick="closeWiz()">Cancel</button>
+      <button class="btn btn-primary" id="sel-cont-btn" onclick="confirmSelStep()" ${matchCount===0?'disabled style="opacity:.5"':''}>
+        Select ${matchCount} Row${matchCount!==1?'s':''} & Continue →
+      </button>`;
+    return;
+  }
+
+  const titles = ['What to Change?', 'Review & Save'];
+  const dispStep = wizStep + 1; // step 1 of edit flow is visually step 2 of 3 when wizFromPreSel
+  const totalSteps = wizFromPreSel ? 3 : 2;
+  const allTitles = wizFromPreSel ? ['Select Rows', 'What to Change?', 'Review & Save'] : titles;
+  const curVisStep = wizFromPreSel ? wizStep + 1 : wizStep;
+
+  document.getElementById('wiz-sub').textContent = `Step ${curVisStep} of ${totalSteps} · ${titles[wizStep-1]}`;
+  renderProg(totalSteps, allTitles, curVisStep);
+
+  document.getElementById('wiz-body').innerHTML =
+    wizStep === 1 ? editStep1Html(sel) : editStep2Html(sel);
+
+  if (wizStep === 1) setTimeout(() => { initFlatpickrField('fp-eeff', E, 'effDate'); }, 0);
+
+  document.getElementById('wiz-footer').innerHTML =
+    wizStep === 1
+      ? `<button class="btn btn-ghost" onclick="${wizFromPreSel?'wizStep=0;renderEdit()':'closeWiz()'}">← ${wizFromPreSel?'Back':'Cancel'}</button>
+         <button class="btn btn-blue" onclick="e1next()">Next →</button>`
+      : `<button class="btn btn-ghost" onclick="eBack()">← Back</button>
+         <button class="btn btn-blue" onclick="confirmEdit()">Save Changes</button>`;
+}
+
+function editStep1Html(sel) {
+  const fOpts = [...FAC_RATES, 'No Rate (leave blank)'];
+  const sOpts = [...SVC_RATES, 'No Rate (leave blank)'];
+  return `
+    <p style="font-size:13px;color:#aab3d1;margin-bottom:16px">
+      Editing <strong style="color:#f5f7fa">${sel.length} row${sel.length!==1?'s':''}</strong>. Check what to change:
+    </p>
+    <div class="change-card" id="cc-fac">
+      <div class="change-card-head" onclick="toggleCC('fac')">
+        <input type="checkbox" id="chk-fac" ${E.chFac?'checked':''} onclick="event.stopPropagation();toggleCC('fac')">
+        <span class="cc-label">Change Facility Rate Table</span>
+        <span class="cc-sub">${E.chFac ? E.fRate : '—'}</span>
+      </div>
+      <div class="change-card-body ${E.chFac?'open':''}" id="cc-fac-body">
+        <div class="radio-list">
+          ${fOpts.map(r => `
+            <label class="radio-item ${E.fRate===r?'on':''}" onclick="setEFRate('${r}')">
+              <input type="radio" name="efr" value="${r}" ${E.fRate===r?'checked':''}>
+              <span class="radio-lbl ${r.includes('No Rate')?'dim':''}">${r}</span>
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="change-card" id="cc-svc">
+      <div class="change-card-head" onclick="toggleCC('svc')">
+        <input type="checkbox" id="chk-svc" ${E.chSvc?'checked':''} onclick="event.stopPropagation();toggleCC('svc')">
+        <span class="cc-label">Change Service Rate Table</span>
+        <span class="cc-sub">${E.chSvc ? E.sRate : '—'}</span>
+      </div>
+      <div class="change-card-body ${E.chSvc?'open':''}" id="cc-svc-body">
+        <div class="radio-list">
+          ${sOpts.map(r => `
+            <label class="radio-item ${E.sRate===r?'on':''}" onclick="setESRate('${r}')">
+              <input type="radio" name="esr" value="${r}" ${E.sRate===r?'checked':''}>
+              <span class="radio-lbl ${r.includes('No Rate')?'dim':''}">${r}</span>
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="change-card" id="cc-eff">
+      <div class="change-card-head" onclick="toggleCC('eff')">
+        <input type="checkbox" id="chk-eff" ${E.chEff?'checked':''} onclick="event.stopPropagation();toggleCC('eff')">
+        <span class="cc-label">Change Effective Date</span>
+        <span class="cc-sub">${E.chEff ? (E.effMode==='current'?'Current':E.effDate) : '—'}</span>
+      </div>
+      <div class="change-card-body ${E.chEff?'open':''}" id="cc-eff-body">
+        <div class="ropt">
+          <input type="radio" name="eeff" value="current" ${E.effMode==='current'?'checked':''} onchange="E.effMode='current'">
+          <label>Immediately (Current)</label>
+        </div>
+        <div class="ropt">
+          <input type="radio" name="eeff" value="date" ${E.effMode==='date'?'checked':''} onchange="E.effMode='date'">
+          <label>On a specific date:</label>
+        </div>
+        <div class="eff-date" style="margin-top:6px">
+          <input class="inp" type="text" id="fp-eeff" placeholder="Pick a date" readonly style="width:200px">
+        </div>
+      </div>
+    </div>`;
+}
+
+function editStep2Html(sel) {
+  const changes = [];
+  if (E.chFac) changes.push({ field:'Facility Rate', from: sel[0]?.facilityRate||'?', to: E.fRate });
+  if (E.chSvc) changes.push({ field:'Service Rate',  from: sel[0]?.serviceRate||'?',  to: E.sRate });
+  if (E.chEff) changes.push({ field:'Effective',     from: sel[0]?.effective||'?',    to: E.effMode==='current'?'Current':E.effDate });
+  return `
+    <p class="edit-ctx">
+      Applying <strong>${changes.length} change${changes.length!==1?'s':''}</strong> to
+      <strong>${sel.length} row${sel.length!==1?'s':''}</strong>:
+    </p>
+    ${changes.length
+      ? changes.map(c => `
+          <div class="change-row">
+            <span class="change-field">${c.field}</span>
+            <span class="change-from">${c.from}</span>
+            <span class="change-arr">→</span>
+            <span class="change-to">${c.to}</span>
+          </div>`).join('')
+      : '<div class="no-changes">No changes selected.</div>'}`;
+}
+
+// ── REMOVE ────────────────────────────────────────────
+
+function renderRemove() {
+  const sel = data.filter(r => r.selected);
+  document.getElementById('wiz-title').textContent = 'Remove Availability';
+
+  if (wizStep === 0) {
+    const matchCount = getMatchingRows().length;
+    document.getElementById('wiz-sub').textContent = 'Step 1 of 2 · Select Rows';
+    renderProg(2, ['Select Rows', 'Confirm Removal'], 1);
+    document.getElementById('wiz-body').innerHTML = selectionStepHtml('remove');
+    document.getElementById('wiz-footer').innerHTML = `
+      <button class="btn btn-ghost" onclick="closeWiz()">Cancel</button>
+      <button class="btn btn-danger" id="sel-cont-btn" onclick="confirmSelStep()" ${matchCount===0?'disabled style="opacity:.5"':''}>
+        Select ${matchCount} Row${matchCount!==1?'s':''} & Continue →
+      </button>`;
+    return;
+  }
+
+  document.getElementById('wiz-sub').textContent = wizFromPreSel ? 'Step 2 of 2 · Confirm Removal' : 'Confirm removal';
+  if (wizFromPreSel) renderProg(2, ['Select Rows', 'Confirm Removal'], 2);
+  else document.getElementById('wiz-prog').innerHTML = '';
+
+  document.getElementById('wiz-body').innerHTML = `
+    <div class="danger-banner">
+      <h3>Remove ${sel.length} slot${sel.length!==1?'s':''}</h3>
+      <p>The following availability slots will be permanently removed from your schedule.</p>
+    </div>
+    <div class="remove-list">
+      ${sel.map(r => `
+        <div class="rm-item">
+          <span class="rm-date">${r.dateDisp}</span>
+          <span>${r.day}</span>
+          <span style="margin-left:auto;color:#6b7280">${r.hours}</span>
+        </div>`).join('')}
+    </div>
+    <p class="cant-undo">This cannot be undone in this prototype.</p>`;
+  document.getElementById('wiz-footer').innerHTML = `
+    <button class="btn btn-ghost" onclick="${wizFromPreSel?'wizStep=0;data.forEach(r=>r.selected=false);renderRemove()':'closeWiz()'}">
+      ${wizFromPreSel?'← Back':'Cancel'}
+    </button>
+    <button class="btn btn-danger" onclick="confirmRemove()">Remove ${sel.length} Slot${sel.length!==1?'s':''}</button>`;
+}
+
+// ── Pre-selection filter step ──────────────────────────
+function getMatchingRows() {
+  return data.filter(r => {
+    if (S.days.length && !S.days.includes(r.day)) return false;
+    if (S.fRate && r.facilityRate !== S.fRate) return false;
+    if (S.sRate && r.serviceRate !== S.sRate) return false;
+    return true;
+  });
+}
+
+function selectionStepHtml(forMode) {
+  const dayOrder = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const uniqueDays = [...new Set(data.map(r => r.day))].sort((a,b)=>dayOrder.indexOf(a)-dayOrder.indexOf(b));
+  const uniqueFRates = [...new Set(data.map(r => r.facilityRate))].sort();
+  const uniqueSRates = [...new Set(data.map(r => r.serviceRate))].sort();
+
+  const dayCount = d => data.filter(r => r.day === d).length;
+  const frCount  = f => data.filter(r => r.facilityRate === f).length;
+  const srCount  = s => data.filter(r => r.serviceRate === s).length;
+
+  const matched = getMatchingRows().length;
+  const verb = forMode === 'remove' ? 'remove' : 'edit';
+
+  return `
+    <p style="font-size:13px;color:#aab3d1;margin-bottom:18px">
+      No rows selected. Filter below to choose which rows to ${verb}.
+    </p>
+
+    <div class="fgrp">
+      <div class="flabel">Day of week</div>
+      <div class="day-pills" style="gap:6px">
+        ${uniqueDays.map(d => `
+          <button class="day-pill ${S.days.includes(d)?'on':''}"
+            style="width:auto;padding:0 10px;gap:4px;font-size:11px"
+            data-day="${d}"
+            onclick="toggleSDay('${d}')">
+            ${d}<span style="opacity:.6;font-weight:400"> ·${dayCount(d)}</span>
+          </button>`).join('')}
+      </div>
+    </div>
+
+    <div class="div"></div>
+
+    <div class="radio-cols" style="gap:12px">
+      <div>
+        <div class="radio-sec-label">Facility Rate</div>
+        <div class="radio-list">
+          <label class="radio-item ${S.fRate===''?'on':''}" onclick="S.fRate='';updateSelCount()">
+            <input type="radio" name="sfr" ${S.fRate===''?'checked':''}><span class="radio-lbl">Any rate</span>
+          </label>
+          ${uniqueFRates.map(r => `
+            <label class="radio-item ${S.fRate===r?'on':''}" onclick="S.fRate='${r}';updateSelCount()">
+              <input type="radio" name="sfr" ${S.fRate===r?'checked':''}><span class="radio-lbl">${r} <span style="color:#6b7280;font-size:11px">(${frCount(r)})</span></span>
+            </label>`).join('')}
+        </div>
+      </div>
+      <div>
+        <div class="radio-sec-label">Service Rate</div>
+        <div class="radio-list">
+          <label class="radio-item ${S.sRate===''?'on':''}" onclick="S.sRate='';updateSelCount()">
+            <input type="radio" name="ssr" ${S.sRate===''?'checked':''}><span class="radio-lbl">Any rate</span>
+          </label>
+          ${uniqueSRates.map(r => `
+            <label class="radio-item ${S.sRate===r?'on':''}" onclick="S.sRate='${r}';updateSelCount()">
+              <input type="radio" name="ssr" ${S.sRate===r?'checked':''}><span class="radio-lbl">${r} <span style="color:#6b7280;font-size:11px">(${srCount(r)})</span></span>
+            </label>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="div"></div>
+    <p class="slot-count" id="sel-count-txt">
+      <strong id="sel-match-n" style="color:${matched>0?'#34d399':'#f87171'}">${matched} row${matched!==1?'s':''}</strong> match these filters
+    </p>`;
+}
+
+function toggleSDay(d) {
+  const i = S.days.indexOf(d);
+  if (i >= 0) S.days.splice(i,1); else S.days.push(d);
+  document.querySelectorAll('[data-day]').forEach(btn => {
+    btn.classList.toggle('on', S.days.includes(btn.getAttribute('data-day')));
+  });
+  updateSelCount();
+}
+
+function updateSelCount() {
+  const n = getMatchingRows().length;
+  const countEl = document.getElementById('sel-match-n');
+  if (countEl) { countEl.textContent = `${n} row${n!==1?'s':''}`; countEl.style.color = n>0?'#34d399':'#f87171'; }
+  const btn = document.getElementById('sel-cont-btn');
+  if (btn) { btn.textContent = `Select ${n} Row${n!==1?'s':''} & Continue →`; btn.disabled = n===0; btn.style.opacity = n===0?'0.5':'1'; }
+}
+
+function confirmSelStep() {
+  const matched = getMatchingRows();
+  if (!matched.length) return;
+  data.forEach(r => r.selected = false);
+  matched.forEach(r => r.selected = true);
+  renderTable();
+  wizStep = 1;
+  renderWiz();
+}
+
+// ── PROGRESS BAR ──────────────────────────────────────
+
+function renderProg(total, labels, currentStep) {
+  const active = currentStep !== undefined ? currentStep : wizStep;
+  let h = '<div class="wiz-progress"><div class="prog-steps">';
+  for (let i = 1; i <= total; i++) {
+    const done = i < active, isActive = i === active;
+    h += `<div class="prog-step">
+      <div class="prog-circle ${done?'done':''} ${isActive?'active':''}">${done?'✓':i}</div>
+      <div class="prog-label ${isActive?'active':''}">${labels[i-1]}</div>
+    </div>`;
+    if (i < total) h += `<div class="prog-line ${done?'done':''}"></div>`;
+  }
+  h += '</div></div>';
+  document.getElementById('wiz-prog').innerHTML = h;
+}
+
+// ═══════════════════════════════════════════════════════
+// STEP 1 INTERACTIONS
+// ═══════════════════════════════════════════════════════
+
+// ── MiniPicker — custom inline-styled date picker (no CDN, immune to dark mode) ──
+class MiniPicker {
+  constructor(id, opts = {}) {
+    this.el = document.getElementById(id);
+    if (!this.el) return;
+    this.onChange = opts.onChange || (() => {});
+    this.minDate = opts.minDate ? this._parse(opts.minDate) : null;
+    this.selected = opts.defaultDate ? this._parse(opts.defaultDate) : null;
+    const ref = this.selected || new Date(2026, 5, 26);
+    this.yr = ref.getFullYear(); this.mo = ref.getMonth();
+    this.popup = null;
+
+    this.display = document.createElement('input');
+    this.display.type = 'text'; this.display.readOnly = true;
+    this.display.className = this.el.className;
+    this.display.placeholder = this.el.placeholder || 'Pick a date';
+    if (this.el.style.cssText) this.display.style.cssText = this.el.style.cssText;
+    this.display.value = this.selected ? this._fmt(this.selected) : '';
+    this.el.after(this.display); this.el.style.display = 'none';
+    this.display.addEventListener('click', () => this.toggle());
+  }
+
+  set(key, val) {
+    if (key === 'minDate') this.minDate = val ? this._parse(val) : null;
+  }
+
+  toggle() { this.popup ? this.close() : this.open(); }
+
+  open() {
+    this.close();
+    const rect = this.display.getBoundingClientRect();
+    this.popup = document.createElement('div');
+    const ps = this.popup.style;
+    ps.position = 'fixed'; ps.zIndex = '99999';
+    ps.top = (rect.bottom + 4) + 'px';
+    ps.left = Math.min(rect.left, window.innerWidth - 292) + 'px';
+    ps.width = '280px'; ps.background = '#ffffff';
+    ps.border = '1px solid #e5e7eb'; ps.borderRadius = '10px';
+    ps.boxShadow = '0 12px 40px rgba(0,0,0,0.18)';
+    ps.fontFamily = '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
+    ps.fontSize = '13px'; ps.color = '#374151';
+    ps.userSelect = 'none'; ps.overflow = 'hidden';
+    document.body.appendChild(this.popup);
+    this._render();
+    setTimeout(() => {
+      this._out = e => { if (!this.popup?.contains(e.target) && e.target !== this.display) this.close(); };
+      document.addEventListener('click', this._out);
+    }, 0);
+  }
+
+  close() {
+    this.popup?.remove(); this.popup = null;
+    document.removeEventListener('click', this._out);
+  }
+
+  _render() {
+    const MN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const DN = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+    const y = this.yr, m = this.mo;
+    const first = new Date(y, m, 1).getDay();
+    const last  = new Date(y, m + 1, 0).getDate();
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // Header
+    const hdr = el('div', { display:'flex', alignItems:'center', justifyContent:'space-between',
+      padding:'10px 14px', background:'#f9fafb', borderBottom:'1px solid #e5e7eb' });
+    const btn = (txt, fn) => {
+      const b = el('button', { background:'none', border:'none', cursor:'pointer',
+        color:'#6b7280', fontSize:'20px', padding:'0 6px', lineHeight:'1', fontFamily:'inherit' });
+      b.textContent = txt; b.addEventListener('click', e => { e.stopPropagation(); fn(); }); return b;
+    };
+    const lbl = el('span', { fontWeight:'600', color:'#111827', fontSize:'13px' });
+    lbl.textContent = MN[m] + ' ' + y;
+    hdr.appendChild(btn('‹', () => { this.mo--; if (this.mo < 0) { this.mo=11; this.yr--; } this._render(); }));
+    hdr.appendChild(lbl);
+    hdr.appendChild(btn('›', () => { this.mo++; if (this.mo > 11) { this.mo=0; this.yr++; } this._render(); }));
+
+    // Day-name row
+    const drow = el('div', { display:'grid', gridTemplateColumns:'repeat(7,1fr)', padding:'6px 10px 2px', background:'#ffffff' });
+    DN.forEach(d => { const c = el('div', { textAlign:'center', fontSize:'10px', fontWeight:'700', color:'#9ca3af', padding:'2px 0' }); c.textContent = d; drow.appendChild(c); });
+
+    // Day grid
+    const grid = el('div', { display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:'2px', padding:'0 10px 10px', background:'#ffffff' });
+    for (let i = 0; i < first; i++) grid.appendChild(document.createElement('div'));
+    for (let d = 1; d <= last; d++) {
+      const date = new Date(y, m, d); date.setHours(0,0,0,0);
+      const isSel = this.selected && date.getTime() === this.selected.getTime();
+      const isTod = date.getTime() === today.getTime();
+      const isDis = this.minDate && date < this.minDate;
+      const cell = el('div', {
+        textAlign:'center', padding:'5px 2px', borderRadius:'6px',
+        cursor: isDis ? 'not-allowed' : 'pointer',
+        background: isSel ? '#f97316' : 'transparent',
+        color: isDis ? '#d1d5db' : isSel ? '#ffffff' : isTod ? '#ea580c' : '#374151',
+        fontWeight: (isSel || isTod) ? '600' : '400',
+        border: isTod && !isSel ? '1px solid #f97316' : '1px solid transparent',
+        fontSize: '13px', lineHeight: '1.4',
+      });
+      cell.textContent = d;
+      if (!isDis) {
+        cell.addEventListener('mouseenter', () => { if (!isSel) cell.style.background = '#fff7ed'; });
+        cell.addEventListener('mouseleave', () => { if (!isSel) cell.style.background = 'transparent'; });
+        cell.addEventListener('click', e => {
+          e.stopPropagation();
+          this.selected = new Date(y, m, d);
+          this.display.value = this._fmt(this.selected);
+          const iso = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+          this.onChange(iso);
+          this.close();
+        });
+      }
+      grid.appendChild(cell);
+    }
+
+    this.popup.innerHTML = '';
+    this.popup.appendChild(hdr);
+    this.popup.appendChild(drow);
+    this.popup.appendChild(grid);
+  }
+
+  _parse(s) { const d = new Date(s + 'T00:00:00'); return isNaN(d) ? null : d; }
+  _fmt(d) {
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${M[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
+  }
+}
+
+function el(tag, styles) {
+  const e = document.createElement(tag);
+  Object.assign(e.style, styles);
+  return e;
+}
+
+function initFlatpickrField(id, state, key) {
+  new MiniPicker(id, {
+    defaultDate: state[key] || null,
+    minDate: '2026-06-25',
+    onChange(iso) { state[key] = iso; }
+  });
+}
+
+function initFlatpickr() {
+  let endPicker;
+  new MiniPicker('fp-start', {
+    defaultDate: A.startDate || null,
+    minDate: '2026-06-25',
+    onChange(iso) {
+      A.startDate = iso;
+      if (endPicker) endPicker.set('minDate', iso);
+    }
+  });
+  endPicker = new MiniPicker('fp-end', {
+    defaultDate: A.endDate || null,
+    minDate: A.startDate || '2026-06-25',
+    onChange(iso) { A.endDate = iso; }
+  });
+}
+
+function toggleDay(i) {
+  const idx = A.days.indexOf(i);
+  if (idx >= 0) A.days.splice(idx, 1); else A.days.push(i);
+  document.querySelectorAll('.day-pill').forEach(p => {
+    const d = parseInt(p.getAttribute('data-d'));
+    p.classList.toggle('on', A.days.includes(d));
+  });
+}
+
+function initSlider() {
+  updateFill();
+}
+
+function updateFill() {
+  const fill = document.getElementById('sl-fill');
+  if (!fill) return;
+  const pS = (A.sh / 23) * 100, pE = (A.eh / 23) * 100;
+  fill.style.left = pS + '%';
+  fill.style.width = (pE - pS) + '%';
+  const ts = document.getElementById('t-start'), te = document.getElementById('t-end');
+  if (ts) ts.value = fmtHour(A.sh);
+  if (te) te.value = fmtHour(A.eh);
+}
+
+function slideStart(v) {
+  const n = parseInt(v);
+  if (n >= A.eh) { document.getElementById('range-start').value = A.sh; return; }
+  A.sh = n; updateFill();
+}
+
+function slideEnd(v) {
+  const n = parseInt(v);
+  if (n <= A.sh) { document.getElementById('range-end').value = A.eh; return; }
+  A.eh = n; updateFill();
+}
+
+function parseTimeInp(which, val) {
+  val = val.trim().toUpperCase();
+  const ampm = val.includes('AM') ? 'AM' : val.includes('PM') ? 'PM' : null;
+  val = val.replace('AM','').replace('PM','').trim();
+  let h = parseInt(val.split(':')[0]);
+  if (isNaN(h)) return;
+  if (ampm === 'PM' && h !== 12) h += 12;
+  if (ampm === 'AM' && h === 12) h = 0;
+  if (h < 0 || h > 23) return;
+  if (which === 'start' && h < A.eh) {
+    A.sh = h;
+    document.getElementById('range-start').value = h;
+  } else if (which === 'end' && h > A.sh) {
+    A.eh = h;
+    document.getElementById('range-end').value = h;
+  }
+  updateFill();
+}
+
+// ═══════════════════════════════════════════════════════
+// STEP 2 INTERACTIONS
+// ═══════════════════════════════════════════════════════
+
+function setFRate(r) {
+  A.fRate = r;
+  document.querySelectorAll('[name="fr"]').forEach(x => {
+    x.checked = x.value === r;
+    x.closest('.radio-item').classList.toggle('on', x.value === r);
+  });
+}
+
+function setSRate(r) {
+  A.sRate = r;
+  document.querySelectorAll('[name="sr"]').forEach(x => {
+    x.checked = x.value === r;
+    x.closest('.radio-item').classList.toggle('on', x.value === r);
+  });
+}
+
+function setEffMode(m) {
+  A.effMode = m;
+  const wrap = document.getElementById('eff-date-wrap');
+  if (wrap) wrap.classList.toggle('hidden', m !== 'date');
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+
+function a1next() {
+  let ok = true;
+  const sd = parseVal(A.startDate), ed = parseVal(A.endDate);
+  const de = document.getElementById('err-date'), dye = document.getElementById('err-days');
+  if (!A.startDate || !A.endDate || sd >= ed) { de.classList.remove('hidden'); ok = false; } else de.classList.add('hidden');
+  if (!A.days.length) { dye.classList.remove('hidden'); ok = false; } else dye.classList.add('hidden');
+  if (A.sh >= A.eh) { toast('Open from time must be before Close at time.', true); return; }
+  if (ok) { wizStep = 2; renderAdd(); }
+}
+
+function a2next() { wizStep = 3; renderAdd(); }
+function aBack()  { wizStep--; renderAdd(); }
+
+function e1next() {
+  if (!E.chFac && !E.chSvc && !E.chEff) { toast('Select at least one field to change.', true); return; }
+  wizStep = 2; renderEdit();
+}
+function eBack() { wizStep = 1; renderEdit(); }
+
+// ═══════════════════════════════════════════════════════
+// CONFIRM ACTIONS
+// ═══════════════════════════════════════════════════════
+
+function calcPreview() {
+  const rows = [];
+  const sd = parseVal(A.startDate), ed = parseVal(A.endDate);
+  for (let d = new Date(sd); d <= ed; d.setDate(d.getDate()+1)) {
+    if (A.days.includes(d.getDay())) {
+      const dcp = new Date(d);
+      rows.push({ dateObj: dcp, dateVal: fmtVal(dcp), dateDisp: fmtDate(dcp), day: DAYS[dcp.getDay()] });
+    }
+  }
+  return rows;
+}
+
+function confirmAdd() {
+  const preview = calcPreview();
+  preview.forEach(r => {
+    data.push({
+      id: uid++, ...r,
+      hours: `${fmtHour(A.sh)} – ${fmtHour(A.eh)}`,
+      facilityRate: A.fRate, serviceRate: A.sRate,
+      effective: A.effMode === 'current' ? 'Current' : A.effDate,
+      selected: false, isNew: true
+    });
+  });
+  data.sort((a,b) => a.dateObj - b.dateObj);
+  closeWiz(); renderTable();
+  toast(`${preview.length} availability slot${preview.length!==1?'s':''} added!`);
+  setTimeout(() => { data.forEach(r => r.isNew = false); }, 3500);
+}
+
+function confirmEdit() {
+  const sel = data.filter(r => r.selected);
+  sel.forEach(r => {
+    if (E.chFac) r.facilityRate = E.fRate;
+    if (E.chSvc) r.serviceRate = E.sRate;
+    if (E.chEff) r.effective = E.effMode === 'current' ? 'Current' : E.effDate;
+    r.selected = false;
+  });
+  closeWiz(); renderTable();
+  toast(`${sel.length} row${sel.length!==1?'s':''} updated!`);
+}
+
+function confirmRemove() {
+  const n = data.filter(r => r.selected).length;
+  data = data.filter(r => !r.selected);
+  closeWiz(); renderTable();
+  toast(`${n} slot${n!==1?'s':''} removed.`, false, true);
+}
+
+// ═══════════════════════════════════════════════════════
+// EDIT STEP 1 HELPERS
+// ═══════════════════════════════════════════════════════
+
+function toggleCC(which) {
+  const map = { fac:'chFac', svc:'chSvc', eff:'chEff' };
+  E[map[which]] = !E[map[which]];
+  const chk = document.getElementById(`chk-${which}`);
+  if (chk) chk.checked = E[map[which]];
+  const body = document.getElementById(`cc-${which}-body`);
+  if (body) body.classList.toggle('open', E[map[which]]);
+  updateCCSub(which);
+}
+
+function updateCCSub(which) {
+  const sub = document.querySelector(`#cc-${which} .cc-sub`);
+  if (!sub) return;
+  const map = { fac:'chFac', svc:'chSvc', eff:'chEff' };
+  if (!E[map[which]]) { sub.textContent = '—'; return; }
+  if (which === 'fac') sub.textContent = E.fRate;
+  else if (which === 'svc') sub.textContent = E.sRate;
+  else sub.textContent = E.effMode === 'current' ? 'Current' : E.effDate;
+}
+
+function setEFRate(r) {
+  E.fRate = r;
+  document.querySelectorAll('[name="efr"]').forEach(x => {
+    x.checked = x.value === r;
+    x.closest('.radio-item').classList.toggle('on', x.value === r);
+  });
+  updateCCSub('fac');
+}
+
+function setESRate(r) {
+  E.sRate = r;
+  document.querySelectorAll('[name="esr"]').forEach(x => {
+    x.checked = x.value === r;
+    x.closest('.radio-item').classList.toggle('on', x.value === r);
+  });
+  updateCCSub('svc');
+}
+
+// ═══════════════════════════════════════════════════════
+// PREVIEW TOGGLE
+// ═══════════════════════════════════════════════════════
+
+function togglePreview() {
+  const wrap = document.getElementById('prev-wrap');
+  const btn = document.querySelector('.prev-toggle');
+  if (!wrap) return;
+  const hidden = wrap.classList.toggle('hidden');
+  if (btn) btn.textContent = (hidden ? '▸ Show' : '▾ Hide') + btn.textContent.slice(btn.textContent.indexOf(' '));
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+
+let toastTimer;
+function toast(msg, isErr = false) {
+  const el = document.getElementById('toast');
+  el.textContent = (isErr ? '⚠ ' : '✓ ') + msg;
+  el.className = 'toast show' + (isErr ? ' red' : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+
+renderTable();
+</script>
+</body>
+</html>

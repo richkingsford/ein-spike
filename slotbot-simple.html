@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SlotBot Calendly Style · Weekly Availability</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  background: #f8fafc;
+  color: #1e293b;
+  min-height: 100vh;
+}
+
+/* ── Header ── */
+header {
+  padding: 14px 28px;
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff; border-bottom: 1px solid #e2e8f0;
+}
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 15px; text-decoration: none; color: #1e293b; }
+.brand-mark { width: 26px; height: 26px; border-radius: 7px; background: linear-gradient(135deg, #4361ee, #7209b7); box-shadow: 0 4px 12px rgba(67,97,238,.3); }
+.brand-sub { color: #64748b; font-weight: 400; }
+nav a { color: #64748b; text-decoration: none; font-size: 13px; margin-left: 18px; transition: color .15s; }
+nav a:hover { color: #1e293b; }
+nav a.here { color: #0891b2; font-weight: 600; }
+
+/* ── Main ── */
+main { max-width: 720px; margin: 0 auto; padding: 40px 20px 80px; }
+
+.page-header { margin-bottom: 32px; }
+.page-header h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+.page-header h1 .badge {
+  font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  background: linear-gradient(135deg, #0891b2, #06b6d4); padding: 3px 9px; border-radius: 20px; color: #fff;
+}
+.page-header p { font-size: 14px; color: #64748b; margin-top: 6px; line-height: 1.5; }
+
+/* ── Card ── */
+.card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06); overflow: hidden;
+}
+.card-header {
+  padding: 18px 24px; border-bottom: 1px solid #f1f5f9;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.card-header h2 { font-size: 14px; font-weight: 700; color: #1e293b; }
+.card-header p { font-size: 12px; color: #64748b; margin-top: 2px; }
+.timezone-pill {
+  font-size: 12px; color: #64748b; background: #f1f5f9; border: 1px solid #e2e8f0;
+  padding: 5px 12px; border-radius: 20px; display: flex; align-items: center; gap: 5px; cursor: default;
+}
+
+/* ── Day rows ── */
+.day-row {
+  display: flex; align-items: flex-start;
+  padding: 16px 24px; border-bottom: 1px solid #f8fafc;
+  gap: 16px; min-height: 60px;
+  transition: background .1s;
+}
+.day-row:last-child { border-bottom: none; }
+.day-row:hover { background: #fafafa; }
+
+/* Toggle */
+.toggle-wrap { display: flex; align-items: center; padding-top: 2px; flex-shrink: 0; }
+.toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-track {
+  position: absolute; inset: 0; border-radius: 22px;
+  background: #e2e8f0; cursor: pointer; transition: background .2s;
+}
+.toggle-thumb {
+  position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.2);
+  transition: transform .2s; pointer-events: none;
+}
+.toggle input:checked ~ .toggle-track { background: #0891b2; }
+.toggle input:checked ~ .toggle-thumb { transform: translateX(16px); }
+
+/* Day label */
+.day-label {
+  width: 38px; flex-shrink: 0; padding-top: 3px;
+  font-size: 13px; font-weight: 700; color: #374151;
+}
+.day-row.off .day-label { color: #94a3b8; }
+
+/* Slots area */
+.slots-area { flex: 1; min-width: 0; }
+
+.unavailable-msg {
+  font-size: 13px; color: #94a3b8; font-style: italic;
+  padding-top: 3px;
+}
+
+.slot-list { display: flex; flex-direction: column; gap: 6px; }
+
+.slot-row {
+  display: flex; align-items: center; gap: 8px;
+}
+
+.time-sel {
+  appearance: none; -webkit-appearance: none;
+  background: #f8fafc; border: 1px solid #e2e8f0;
+  border-radius: 8px; padding: 6px 10px;
+  font-size: 13px; color: #1e293b; font-family: inherit;
+  cursor: pointer; outline: none; transition: border-color .15s;
+  min-width: 118px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 9px center;
+  padding-right: 28px;
+}
+.time-sel:hover { border-color: #94a3b8; }
+.time-sel:focus { border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8,145,178,.1); }
+
+.slot-dash { color: #94a3b8; font-size: 14px; font-weight: 300; flex-shrink: 0; }
+
+.rm-slot-btn {
+  width: 26px; height: 26px; border-radius: 6px; border: none;
+  background: none; color: #cbd5e1; font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .12s; flex-shrink: 0; font-family: inherit;
+  line-height: 1;
+}
+.rm-slot-btn:hover { background: #fef2f2; color: #dc2626; }
+
+.add-slot-btn {
+  margin-top: 4px; background: none; border: none; padding: 0;
+  font-size: 12px; font-weight: 600; color: #0891b2;
+  cursor: pointer; font-family: inherit; display: flex; align-items: center; gap: 4px;
+  transition: color .12s;
+}
+.add-slot-btn:hover { color: #0e7490; }
+
+/* Overlap warning */
+.slot-warn {
+  font-size: 11px; color: #d97706; margin-top: 4px;
+  display: flex; align-items: center; gap: 4px;
+}
+
+/* ── Footer ── */
+.footer-actions {
+  margin-top: 24px; display: flex; justify-content: flex-end; gap: 10px;
+}
+.btn {
+  padding: 9px 20px; border-radius: 9px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: none; transition: all .15s; font-family: inherit;
+}
+.btn-ghost { background: none; border: 1px solid #e2e8f0; color: #64748b; }
+.btn-ghost:hover { border-color: #94a3b8; color: #1e293b; }
+.btn-primary { background: linear-gradient(135deg, #0891b2, #0e7490); color: #fff; box-shadow: 0 3px 10px rgba(8,145,178,.25); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 5px 14px rgba(8,145,178,.35); }
+
+/* ── NLP Assistant ── */
+.nlp-box {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.06); padding: 18px 20px; margin-bottom: 20px;
+}
+.nlp-top { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.nlp-icon { font-size: 16px; }
+.nlp-label { font-size: 13px; font-weight: 700; color: #1e293b; }
+.nlp-hint { font-size: 12px; color: #94a3b8; margin-left: 2px; }
+.nlp-row { display: flex; gap: 8px; }
+.nlp-input {
+  flex: 1; padding: 9px 14px; border: 1px solid #e2e8f0; border-radius: 10px;
+  font-size: 13px; font-family: inherit; color: #1e293b; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.nlp-input:focus { border-color: #0891b2; box-shadow: 0 0 0 3px rgba(8,145,178,.1); }
+.nlp-input::placeholder { color: #94a3b8; }
+.nlp-send {
+  padding: 9px 18px; background: linear-gradient(135deg, #0891b2, #0e7490);
+  color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700;
+  cursor: pointer; font-family: inherit; transition: all .15s; white-space: nowrap;
+}
+.nlp-send:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(8,145,178,.3); }
+.nlp-examples { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.nlp-try { font-size: 11px; color: #94a3b8; }
+.nlp-eg {
+  font-size: 11px; padding: 3px 9px; background: #f1f5f9; border: 1px solid #e2e8f0;
+  border-radius: 20px; cursor: pointer; color: #475569; font-family: inherit;
+  transition: all .12s;
+}
+.nlp-eg:hover { background: #e0f2fe; border-color: #0891b2; color: #0891b2; }
+.nlp-feedback {
+  margin-top: 10px; font-size: 12px; padding: 8px 12px; border-radius: 8px;
+  display: none;
+}
+.nlp-feedback.ok { background: #f0fdf4; color: #166534; border: 1px solid #86efac; display: block; }
+.nlp-feedback.err { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; display: block; }
+
+/* ── Toast ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px; z-index: 300;
+  background: #f0fdf4; border: 1px solid #86efac; color: #166534;
+  padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  transform: translateY(70px); opacity: 0; transition: all .22s;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.red { background:#fef2f2; border-color:#fca5a5; color:#991b1b; }
+</style>
+</head>
+<body>
+
+<header>
+  <a class="brand" href="./index.html">
+    <div class="brand-mark"></div>
+    RichForge <span class="brand-sub">&nbsp;· spikes</span>
+  </a>
+  <nav>
+    <a href="./index.html">Home</a>
+    <a href="./slotbot.html">SlotBot Feature Parity</a>
+    <a href="./slotbot-simple.html" class="here">SlotBot Calendly Style</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-header">
+    <h1>SlotBot — Calendly Style <span class="badge">PROTOTYPE</span></h1>
+    <p>Set your weekly availability. Toggle days on or off, then configure your available time windows.</p>
+  </div>
+
+  <div class="nlp-box">
+    <div class="nlp-top">
+      <span class="nlp-icon">✦</span>
+      <span class="nlp-label">Schedule Assistant</span>
+      <span class="nlp-hint">— type to update your schedule</span>
+    </div>
+    <div class="nlp-row">
+      <input class="nlp-input" id="nlp-input" type="text"
+        placeholder='e.g. "MTW 9am-5pm" or "TH/F off" or "weekdays 8am-10pm"'
+        onkeydown="if(event.key==='Enter')applyNL()">
+      <button class="nlp-send" onclick="applyNL()">Apply</button>
+    </div>
+    <div class="nlp-examples">
+      <span class="nlp-try">Try:</span>
+      <button class="nlp-eg" onclick="fillNL(this)">MTW 9am-5pm</button>
+      <button class="nlp-eg" onclick="fillNL(this)">TH/F 10am-2pm</button>
+      <button class="nlp-eg" onclick="fillNL(this)">weekends off</button>
+      <button class="nlp-eg" onclick="fillNL(this)">everyday 8am-10pm</button>
+      <button class="nlp-eg" onclick="fillNL(this)">sun on 12pm-6pm</button>
+      <button class="nlp-eg" onclick="fillNL(this)">MTWTHF 9-5</button>
+    </div>
+    <div class="nlp-feedback" id="nlp-fb"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <h2>Weekly Hours</h2>
+        <p>Gymnasium A · Riverside Community Center</p>
+      </div>
+      <div class="timezone-pill">🕐 America/Los_Angeles</div>
+    </div>
+    <div id="days-list"></div>
+  </div>
+
+  <div class="footer-actions">
+    <button class="btn btn-ghost" onclick="resetDefaults()">Reset to defaults</button>
+    <button class="btn btn-primary" onclick="saveSchedule()">Save changes</button>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const DAY_ABBR = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+// Time options: every 30 min, 12:00 AM → 11:30 PM + midnight end
+function buildTimeOptions() {
+  const opts = [];
+  for (let h = 0; h < 24; h++) {
+    for (let m = 0; m < 60; m += 30) {
+      const val = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+      const period = h < 12 ? 'AM' : 'PM';
+      const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      const label = `${h12}:${String(m).padStart(2,'0')} ${period}`;
+      opts.push({ val, label });
+    }
+  }
+  opts.push({ val: '24:00', label: '12:00 AM (next day)' });
+  return opts;
+}
+const TIME_OPTS = buildTimeOptions();
+
+function timeToMins(t) {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + m;
+}
+
+// Schedule state: array of 7 days
+const schedule = [
+  { on: false, slots: [{ start: '09:00', end: '17:00' }] }, // Sun
+  { on: true,  slots: [{ start: '08:00', end: '22:00' }] }, // Mon
+  { on: true,  slots: [{ start: '08:00', end: '22:00' }] }, // Tue
+  { on: true,  slots: [{ start: '08:00', end: '22:00' }] }, // Wed
+  { on: true,  slots: [{ start: '08:00', end: '22:00' }] }, // Thu
+  { on: true,  slots: [{ start: '08:00', end: '22:00' }] }, // Fri
+  { on: false, slots: [{ start: '09:00', end: '17:00' }] }, // Sat
+];
+
+const defaults = JSON.parse(JSON.stringify(schedule));
+
+function makeSelect(selectedVal) {
+  const sel = document.createElement('select');
+  sel.className = 'time-sel';
+  TIME_OPTS.forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt.val;
+    o.textContent = opt.label;
+    if (opt.val === selectedVal) o.selected = true;
+    sel.appendChild(o);
+  });
+  return sel;
+}
+
+function renderSlotRow(dayIdx, slotIdx) {
+  const slot = schedule[dayIdx].slots[slotIdx];
+  const row = document.createElement('div');
+  row.className = 'slot-row';
+  row.dataset.slot = slotIdx;
+
+  const startSel = makeSelect(slot.start);
+  startSel.addEventListener('change', () => {
+    slot.start = startSel.value;
+    if (timeToMins(slot.start) >= timeToMins(slot.end)) {
+      // Auto-advance end by 1 hour
+      const newEnd = timeToMins(slot.start) + 60;
+      const newEndStr = newEnd >= 1440 ? '24:00' : `${String(Math.floor(newEnd/60)).padStart(2,'0')}:${String(newEnd%60).padStart(2,'0')}`;
+      slot.end = newEndStr;
+      endSel.value = newEndStr;
+    }
+    checkOverlaps(dayIdx);
+  });
+
+  const dash = document.createElement('span');
+  dash.className = 'slot-dash';
+  dash.textContent = '–';
+
+  const endSel = makeSelect(slot.end);
+  endSel.addEventListener('change', () => {
+    slot.end = endSel.value;
+    checkOverlaps(dayIdx);
+  });
+
+  const rmBtn = document.createElement('button');
+  rmBtn.className = 'rm-slot-btn';
+  rmBtn.title = 'Remove';
+  rmBtn.innerHTML = '×';
+  rmBtn.addEventListener('click', () => {
+    schedule[dayIdx].slots.splice(slotIdx, 1);
+    renderDay(dayIdx);
+  });
+
+  row.appendChild(startSel);
+  row.appendChild(dash);
+  row.appendChild(endSel);
+  row.appendChild(rmBtn);
+  return row;
+}
+
+function checkOverlaps(dayIdx) {
+  const day = schedule[dayIdx];
+  const warn = document.getElementById(`warn-${dayIdx}`);
+  if (!warn) return;
+  const sorted = [...day.slots].map(s => ({ s: timeToMins(s.start), e: timeToMins(s.end) })).sort((a,b) => a.s - b.s);
+  let hasOverlap = false;
+  for (let i = 0; i < sorted.length - 1; i++) {
+    if (sorted[i].e > sorted[i+1].s) { hasOverlap = true; break; }
+  }
+  warn.style.display = hasOverlap ? 'flex' : 'none';
+}
+
+function renderDay(dayIdx) {
+  const container = document.getElementById(`day-${dayIdx}`);
+  if (!container) return;
+  const day = schedule[dayIdx];
+
+  container.className = 'day-row' + (day.on ? '' : ' off');
+
+  // Toggle
+  const toggleWrap = container.querySelector('.toggle-wrap');
+  const toggleInput = toggleWrap.querySelector('input');
+  toggleInput.checked = day.on;
+
+  // Slots area
+  const slotsArea = container.querySelector('.slots-area');
+  slotsArea.innerHTML = '';
+
+  if (!day.on) {
+    const msg = document.createElement('div');
+    msg.className = 'unavailable-msg';
+    msg.textContent = 'Unavailable';
+    slotsArea.appendChild(msg);
+    return;
+  }
+
+  const slotList = document.createElement('div');
+  slotList.className = 'slot-list';
+  day.slots.forEach((_, i) => slotList.appendChild(renderSlotRow(dayIdx, i)));
+  slotsArea.appendChild(slotList);
+
+  const warn = document.createElement('div');
+  warn.className = 'slot-warn';
+  warn.id = `warn-${dayIdx}`;
+  warn.style.display = 'none';
+  warn.innerHTML = '⚠ Time slots overlap';
+  slotsArea.appendChild(warn);
+
+  if (day.slots.length < 4) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'add-slot-btn';
+    addBtn.innerHTML = '+ Add time';
+    addBtn.addEventListener('click', () => {
+      const lastSlot = day.slots[day.slots.length - 1];
+      const newStart = timeToMins(lastSlot.end);
+      const newEnd = Math.min(newStart + 60, 1440);
+      const fmt = n => n >= 1440 ? '24:00' : `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+      day.slots.push({ start: fmt(newStart), end: fmt(newEnd) });
+      renderDay(dayIdx);
+    });
+    slotsArea.appendChild(addBtn);
+  }
+
+  checkOverlaps(dayIdx);
+}
+
+function buildDayRow(dayIdx) {
+  const day = schedule[dayIdx];
+  const row = document.createElement('div');
+  row.className = 'day-row' + (day.on ? '' : ' off');
+  row.id = `day-${dayIdx}`;
+
+  // Toggle
+  const toggleWrap = document.createElement('div');
+  toggleWrap.className = 'toggle-wrap';
+  const label = document.createElement('label');
+  label.className = 'toggle';
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = day.on;
+  const track = document.createElement('span');
+  track.className = 'toggle-track';
+  const thumb = document.createElement('span');
+  thumb.className = 'toggle-thumb';
+  label.appendChild(input);
+  label.appendChild(track);
+  label.appendChild(thumb);
+  toggleWrap.appendChild(label);
+  input.addEventListener('change', () => {
+    schedule[dayIdx].on = input.checked;
+    renderDay(dayIdx);
+  });
+
+  // Day name
+  const dayLabel = document.createElement('div');
+  dayLabel.className = 'day-label';
+  dayLabel.textContent = DAY_ABBR[dayIdx];
+
+  // Slots area (populated by renderDay)
+  const slotsArea = document.createElement('div');
+  slotsArea.className = 'slots-area';
+
+  row.appendChild(toggleWrap);
+  row.appendChild(dayLabel);
+  row.appendChild(slotsArea);
+  return row;
+}
+
+function init() {
+  const list = document.getElementById('days-list');
+  list.innerHTML = '';
+  // Mon–Sun order (1..6, then 0)
+  const order = [0,1,2,3,4,5,6];
+  order.forEach(i => {
+    list.appendChild(buildDayRow(i));
+    renderDay(i);
+  });
+}
+
+function resetDefaults() {
+  Object.assign(schedule, JSON.parse(JSON.stringify(defaults)));
+  schedule.length = defaults.length;
+  init();
+  showToast('Reset to default schedule');
+}
+
+function saveSchedule() {
+  // Check for overlaps before saving
+  let hasIssues = false;
+  for (let i = 0; i < 7; i++) {
+    const day = schedule[i];
+    if (!day.on) continue;
+    const sorted = [...day.slots].map(s => ({ s: timeToMins(s.start), e: timeToMins(s.end) })).sort((a,b) => a.s - b.s);
+    for (let j = 0; j < sorted.length - 1; j++) {
+      if (sorted[j].e > sorted[j+1].s) { hasIssues = true; break; }
+    }
+  }
+  if (hasIssues) {
+    showToast('Fix overlapping time slots first', true);
+    return;
+  }
+  showToast('Schedule saved!');
+}
+
+function showToast(msg, isErr = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (isErr ? ' red' : '');
+  void t.offsetWidth;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+init();
+
+// ── NLP Schedule Assistant ─────────────────────────────
+
+function fillNL(btn) {
+  document.getElementById('nlp-input').value = btn.textContent;
+  applyNL();
+}
+
+function applyNL() {
+  const raw = document.getElementById('nlp-input').value.trim();
+  if (!raw) return;
+  const fb = document.getElementById('nlp-fb');
+
+  const result = parseScheduleCommand(raw);
+  if (!result || result.days.length === 0) {
+    fb.className = 'nlp-feedback err';
+    fb.textContent = `Couldn't find days in "${raw}". Try "MTW 9am-5pm", "friday off", or "weekdays 8-6".`;
+    return;
+  }
+
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const affected = result.days.map(d => dayNames[d]).join(', ');
+
+  if (result.action === 'off') {
+    result.days.forEach(d => { schedule[d].on = false; });
+    feedback(`Turned off: ${affected}`);
+  } else if (result.action === 'on' && result.slots.length === 0) {
+    result.days.forEach(d => { schedule[d].on = true; });
+    feedback(`Turned on: ${affected}`);
+  } else if (result.slots.length > 0) {
+    result.days.forEach(d => {
+      schedule[d].on = true;
+      if (result.action === 'add') {
+        schedule[d].slots.push(...result.slots.map(s => ({...s})));
+      } else {
+        schedule[d].slots = result.slots.map(s => ({...s}));
+      }
+    });
+    const slotDesc = result.slots.map(s => `${fmtDisp(s.start)}–${fmtDisp(s.end)}`).join(', ');
+    const verb = result.action === 'add' ? 'Added' : 'Set';
+    feedback(`${verb} ${affected} → ${slotDesc}`);
+  } else {
+    fb.className = 'nlp-feedback err';
+    fb.textContent = `Found days (${affected}) but no time or action. Add a time like "9am-5pm" or say "off".`;
+    return;
+  }
+
+  init();
+  document.getElementById('nlp-input').value = '';
+
+  function feedback(msg) {
+    fb.className = 'nlp-feedback ok';
+    fb.textContent = '✓ ' + msg;
+  }
+}
+
+function fmtDisp(t) {
+  if (t === '24:00') return '12:00 AM';
+  const [h, m] = t.split(':').map(Number);
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2,'0')} ${period}`;
+}
+
+function parseScheduleCommand(raw) {
+  const text = raw.toLowerCase();
+
+  // ── Detect action ──────────────────────────────────────
+  let action = 'set';
+  if (/\boff\b|\bunavail|\bdisable\b/.test(text)) action = 'off';
+  else if (/\badd\b|\balso\b/.test(text))          action = 'add';
+  else if (/\bon\b|\benable\b|\bavail/.test(text) && !/\d/.test(text)) action = 'on';
+
+  // ── Detect days ────────────────────────────────────────
+  const days = new Set();
+
+  // Named shortcuts
+  if (/\bweekdays?\b|\bmon(day)?\s*(through|to|-)\s*fri(day)?\b/.test(text)) [1,2,3,4,5].forEach(d => days.add(d));
+  if (/\bweekends?\b/.test(text))                                              [0,6].forEach(d => days.add(d));
+  if (/\beve?ry\s*day\b|\bdaily\b|\ball\s*days?\b/.test(text))                [0,1,2,3,4,5,6].forEach(d => days.add(d));
+
+  // Full names (before abbrev parsing so "thursday" isn't split)
+  const nameMap = {
+    sunday:0, monday:1, tuesday:2, wednesday:3, thursday:4, friday:5, saturday:6,
+    sun:0, mon:1, tue:2, tues:2, wed:3, thu:4, thur:4, thurs:4, fri:5, sat:6
+  };
+  // Sort by length desc so longer names match first
+  Object.keys(nameMap).sort((a,b)=>b.length-a.length).forEach(name => {
+    const re = new RegExp(`\\b${name}\\b`, 'g');
+    if (re.test(text)) days.add(nameMap[name]);
+  });
+
+  // Concatenated abbreviation strings like "MTW", "MTWTHF", "TH/F", "T/W"
+  // Strip out words already consumed and time patterns, then scan runs of letters
+  const stripped = text
+    .replace(/\b(weekdays?|weekends?|everyday|daily|all\s*days?|mon(day)?|tue(sday)?|wed(nesday)?|thu(rsday)?|fri(day)?|sat(urday)?|sun(day)?)\b/g, ' ')
+    .replace(/\d+\s*(?:am?|pm?)?/g, ' ') // strip time numbers
+    .replace(/\b(from|to|change|set|add|also|off|on|enable|disable|unavailable|available|through)\b/g, ' ');
+
+  // Find letter tokens separated by /,&+ or space
+  const tokens = stripped.split(/[\s,\/&+]+/).filter(t => /^[a-z]+$/.test(t));
+  tokens.forEach(tok => {
+    const parsed = parseDayAbbrevString(tok);
+    parsed.forEach(d => days.add(d));
+  });
+
+  // ── Detect times ───────────────────────────────────────
+  const slots = parseTimeRanges(raw);
+
+  return { days: [...days].sort((a,b)=>a-b), action, slots };
+}
+
+function parseDayAbbrevString(str) {
+  // Greedy left-to-right, longest match first
+  const patterns = [
+    ['thu',4],['sun',0],['sat',6],['mon',1],['tue',2],['tues',2],['wed',3],['fri',5],
+    ['th',4],['su',0],['sa',6],['mo',1],['tu',2],['we',3],['fr',5],
+    ['m',1],['w',3],['r',4],['f',5],['t',2],
+  ];
+  const days = [];
+  let i = 0;
+  while (i < str.length) {
+    let matched = false;
+    for (const [abbr, day] of patterns) {
+      if (str.startsWith(abbr, i)) {
+        days.push(day);
+        i += abbr.length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) i++;
+  }
+  // Only trust the parse if every char was consumed (no leftover letters)
+  return days;
+}
+
+function parseTimeStr(s) {
+  s = s.trim().toLowerCase().replace(/\s+/g,'');
+  if (s === 'noon') return 720;
+  if (s === 'midnight') return 1440;
+  // HH:MM am/pm
+  let m = s.match(/^(\d{1,2}):(\d{2})(am?|pm?)?$/);
+  if (m) {
+    let h = +m[1], min = +m[2];
+    if (m[3]?.startsWith('p') && h !== 12) h += 12;
+    if (m[3]?.startsWith('a') && h === 12) h = 0;
+    return h * 60 + min;
+  }
+  // H am/pm
+  m = s.match(/^(\d{1,2})(am?|pm?)$/);
+  if (m) {
+    let h = +m[1];
+    if (m[2].startsWith('p') && h !== 12) h += 12;
+    if (m[2].startsWith('a') && h === 12) h = 0;
+    return h * 60;
+  }
+  // bare number
+  m = s.match(/^(\d{1,2})$/);
+  if (m) return +m[1] * 60;
+  return null;
+}
+
+function parseTimeRanges(text) {
+  const slots = [];
+  // Match patterns like: 9am-5pm  9:00-17:00  9-5  9am to 5pm
+  const re = /(\d{1,2}(?::\d{2})?\s*(?:am?|pm?)?)(?:\s*[-–—]\s*|\s+to\s+)(\d{1,2}(?::\d{2})?\s*(?:am?|pm?)?)/gi;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    let s = parseTimeStr(m[1]);
+    let e = parseTimeStr(m[2]);
+    if (s == null || e == null) continue;
+
+    // Resolve ambiguous bare numbers: "9-1" → 9am–1pm
+    const hasPeriod = t => /am?|pm?/i.test(t);
+    if (!hasPeriod(m[1]) && !hasPeriod(m[2])) {
+      const sh = Math.floor(s/60), eh = Math.floor(e/60);
+      if (eh <= sh && eh <= 12) e += 12*60; // wrap to PM
+    } else if (hasPeriod(m[1]) && !hasPeriod(m[2])) {
+      if (e < s && e <= 12*60) e += 12*60;
+    }
+
+    // Round to nearest 30 min
+    s = Math.round(s/30)*30;
+    e = Math.round(e/30)*30;
+    if (e > s) {
+      const fmt = n => n >= 1440 ? '24:00' : `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+      slots.push({ start: fmt(s), end: fmt(e) });
+    }
+  }
+  return slots;
+}
+</script>
+</body>
+</html>
